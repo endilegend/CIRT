@@ -1,0 +1,103 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+
+body {
+  font-family: "Roboto", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.section-one {
+  background-color: rgb(215, 64, 64);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.header-left {
+  margin-left: 3rem;
+  font-size: 24px;
+  margin-top: 2rem;
+}
+
+.header-middle {
+  font-size: 24px;
+}
+
+.header-right {
+  color: white;
+  gap: 1.5rem;
+  font-size: 14px;
+  padding: 0.5rem;
+  margin-right: 3rem;
+  display: flex;
+}
+
+.sign-In {
+  border: solid black 1px;
+  padding: 4px;
+  color: rgba(255, 255, 255, 0.807);
+  background-color: black;
+}
+.register {
+  border: solid black 1px;
+  padding: 4px;
+  color: black;
+  background-color: rgba(255, 255, 255, 0.807);
+}
+
+.section-two {
+  background-color: rgb(255, 255, 255);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+.section-two-left {
+  margin-right: 3rem;
+  font-size: 24px;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+input[type="search"] {
+  width: 400px;
+  height: 40px;
+  font-size: 18px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.section-three {
+  background-color: black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: white;
+  align-content: center;
+  text-align: center;
+}
+.about h2 {
+  margin-bottom: 10px;
+}
+
+.section-four {
+  background-color: rgb(215, 64, 64);
+  display: flex;
+  align-content: end;
+  flex-direction: column;
+}
+
+.about {
+  margin: 2rem;
+}
+.contact {
+  margin-top: 2rem;
+}
+.copy {
+  margin-top: 2rem;
+}
