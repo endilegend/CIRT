@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="UTampa CIRT data base" />
+    <meta
+      name="keywords"
+      content="University of Tampa, UTampa, CIRT,
+    Criminal Justice, Criminology Institute for Research and Training, database"
+    />
+    <link rel="icon" href="images/UT-Icon.png" />
+    <link rel="stylesheet" href="registerStyles.css" />
+    <link rel="script" href="register.js" />
+    <title>CIRT Log-In</title>
+  </head>
+
+  <body>
+    <div class="section-one">
+      <div class="header">
+        <div class="header-left">
+          <h3>CIRT</h3>
+        </div>
+        <div class="header-middle">
+          <h3>Criminology Institute for Research and Training</h3>
+        </div>
+        <div class="header-right">
+          <a href="signin.html" class="sign-In">Sign-In</a>
+          <a href="register.html" class="register">Register</a>
+        </div>
+      </div>
+    </div>
+    <div class="section-two">
+      <div class="section-two-left">
+        <div class="enter">
+          <form action="submit_form.php" method="post">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required />
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required />
+            <button onclick="Register()">Register</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section-two-right">
+        <img
+          src="assets/Picture1.jpg"
+          alt="criminology"
+          height="200px"
+          width="250px"
+        />
+      </div>
+    </div>
+  </body>
+</html>

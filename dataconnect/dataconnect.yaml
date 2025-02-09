@@ -1,0 +1,12 @@
+specVersion: "v1beta"
+serviceId: "swing-big"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "swing-big-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
