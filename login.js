@@ -20,6 +20,9 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+console.log("LOADED THE CORRECT Login.js");
+
 //const analytics = getAnalytics(app);
 function Login() {
   // Add login functionality here
@@ -30,3 +33,10 @@ function Signup() {
   // Add signup functionality here
   alert("Signup button clicked");
 }
+
+function Test() {
+  console.log("Starting Test");
+}
+
+var pic = document.querySelector(".section-two-right");
+pic.onclick = Test;
