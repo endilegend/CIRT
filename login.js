@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 //   "type": "commonjs", ... from package.json
 //import { getAnalytics } from "./node_models/firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
@@ -20,13 +21,26 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-console.log("LOADED THE CORRECT Login.js");
-
-//const analytics = getAnalytics(app);
 function Login() {
-  // Add login functionality here
-  alert("Login button clicked");
+  console.log("Login button clicked");
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      // Signed in
+      const user = userCredential.user;
+      console.log("Login successful:", user);
+      // Redirect or perform other actions
+    })
+    .catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.error("Login failed:", errorCode, errorMessage);
+      // Display error message to the user
+    });
 }
 
 function Signup() {
@@ -34,9 +48,7 @@ function Signup() {
   alert("Signup button clicked");
 }
 
-function Test() {
-  console.log("Starting Test");
-}
+function Test() {}
 
-var pic = document.querySelector(".section-two-right");
-pic.onclick = Test;
+const login = document.getElementById("sign-in");
+login.onclick = Login;
