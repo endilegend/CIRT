@@ -1,0 +1,7 @@
+Initial Technical Work:
+
+Worked on the frot-end of the website and got a rough draft of what the frontpage is going to look like
+Designed the schema for the MangoDB databse
+Created a draft of the reading the pdf page
+Initialized a connection with firebase in order to authenticate login/signup
+Group is learning following technologies: MangoDB, Node.JS, JS, HTML, CSS, React, Tailwind, Firebase
