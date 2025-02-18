@@ -15,6 +15,9 @@ Shows the pdf that you searched
 Have links to related articles
 allows for marking up page 
 printing pdf
+This will have a shared header with the other pages (refer to the homepage), we have planned to place the pdf on the left hand side with the ability to go fullscreen. Also, 
+we have designed a related article section to help guide the user in research. The related research will either be chosen from the other or research with similar keywords.
+We also want to build a copy url and citation button to make it very easy to get back to the research and cite it.
 
 Homepage:
 It will allow you to navigate to all aspects of the site
