@@ -8,7 +8,7 @@ Languages being used: (Front END: HTML, CSS, JS)(Back END: noJS, mangoDB)
 The search function processes the request, formats it, and sends it to the appropriate data source in the database
 The database then returns the relates request 
 Search page pic:
-https://docs.google.com/document/d/1BfdommtFSlmCKkyuZ8vOpAggmpXn2-K6gDhvnP0ARyM/edit?tab=t.0 
+https://docs.google.com/document/d/1BfdommtFSlmCKkyuZ8vOpAggmpXn2-K6gDhvnP0ARyM/edit?usp=sharing
 
 PDF Page:
 Shows the pdf that you searched
