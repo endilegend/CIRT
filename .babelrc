@@ -1,0 +1,6 @@
+// filepath: /Users/enditroqe/Documents/GitHub/swing-big/.babelrc
+{
+    "presets": [
+        "@babel/preset-env"
+    ]
+}

@@ -1,0 +1,33 @@
+Search Page:
+This page will allow useres to find information contained directly in the database.
+This will also allow users to have acces to links relevant to their search
+It will also contain a few ancored links consisting of  an about, contacts, special collections, and help, on the top of the page much like the home page
+There will also be a sort funtion for the user to specify what they are searching for
+The user will be able to long in if not already logged in at the top of the page. if they are not logged in they will be sent to the log in page
+Languages being used: (Front END: HTML, CSS, JS)(Back END: noJS, mangoDB)
+The search function processes the request, formats it, and sends it to the appropriate data source in the database
+The database then returns the relates request 
+Search page pic:
+https://docs.google.com/document/d/1BfdommtFSlmCKkyuZ8vOpAggmpXn2-K6gDhvnP0ARyM/edit?usp=sharing
+
+PDF Page:
+Shows the pdf that you searched
+Have links to related articles
+allows for marking up page 
+printing pdf
+This will have a shared header with the other pages (refer to the homepage), we have planned to place the pdf on the left hand side with the ability to go fullscreen. Also, 
+we have designed a related article section to help guide the user in research. The related research will either be chosen from the other or research with similar keywords.
+We also want to build a copy url and citation button to make it very easy to get back to the research and cite it.
+
+Homepage:
+It will allow you to navigate to all aspects of the site
+Searching, about, contacts, special collections
+it is the hub of the page and allows the user to figre out what they want to do
+
+This is the Home page of the website where you can see the homepage includes a visually appealing background featuring the University of Tampa logo, 
+it has a centered header displaying the "CIRT" title and its full name, along with the university’s logo for branding. 
+Additionally, a profile section with a user icon and a Sign In / Log In option allows easy access for users, also a featured artciles, citation help and many more
+options to ensuring a smooth experience
+
+The link to the Detailed Design of the home page is:
+https://docs.google.com/document/d/19VL_QtE63JDkiLFty7gzdIY00Qga4bbeXp2DEGj0haQ/edit?usp=sharing
