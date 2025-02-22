@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Set character encoding for the webpage -->
+    <meta charset="UTF-8" />
+    <!-- Viewport settings for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Title of the webpage -->
+    <title>CIRT - Research Portal</title>
+    <style>
+        /* Import Google Font Poppins */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        /* Background pan animation */
+        @keyframes backgroundPan {
+            from { background-position: center top; }
+            to { background-position: center bottom; }
+        }
+        /* Fade in up animation for elements */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Fade-in animation for navigation items */
+        @keyframes navFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Fade-in animation for buttons */
+        @keyframes buttonFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Body styling with background image and animation */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh;
+            background: url('https://www.ut.edu/uploadedImages/_Site_Root/HomepageBannerImages/UT-TampaSkyline.jpg')
+            no-repeat center center/cover;
+            animation: backgroundPan 30s infinite alternate linear;
+        }
+        /* Container styling */
+        .container {
+            width: 90%; max-width: 1100px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 30px; border-radius: 12px;
+            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 1s ease forwards;
+        }
+        /* Header section styling */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 15px; border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+        /* Title styling */
+        .header h1 {
+            flex-grow: 1; margin-bottom: 0;
+            font-size: 36px; color: #333; font-weight: 600;
+        }
+        /* Subtitle styling */
+        .header p {
+            text-align: center; font-style: italic;
+            margin-top: 5px; font-size: 18px; color: #555;
+        }
+        /* Navigation bar styling */
+        .nav {
+            display: flex; justify-content: space-around;
+            padding: 14px;
+            background: linear-gradient(90deg, #1e3a8a, #4b6cb7);
+            color: white; border-radius: 8px;
+            font-size: 16px; font-weight: 500;
+        }
+        /* Navigation items styling and animation */
+        .nav span {
+            cursor: pointer; transition: color 0.3s;
+            opacity: 0; animation: navFadeIn 0.5s ease forwards;
+        }
+        /* Hover effect for navigation items */
+        .nav span:hover { color: #ffcc00; }
+        /* Animation delays for each navigation item */
+        .nav span:nth-child(1) { animation-delay: 0.3s; }
+        .nav span:nth-child(2) { animation-delay: 0.4s; }
+        .nav span:nth-child(3) { animation-delay: 0.5s; }
+        .nav span:nth-child(4) { animation-delay: 0.6s; }
+        .nav span:nth-child(5) { animation-delay: 0.7s; }
+
+        /* Search bar section styling */
+        .search-bar {
+            display: flex; flex-direction: column; align-items: center;
+            margin: 25px 0; opacity: 0;
+            animation: fadeInUp 1s ease forwards; animation-delay: 0.8s;
+        }
+        /* Search input field styling */
+        .search-bar input {
+            width: 70%; padding: 14px;
+            border: none; border-radius: 8px;
+            font-size: 18px; outline: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: box-shadow 0.3s;
+        }
+        /* Focus effect on search input */
+        .search-bar input:focus {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        /* Styling for search options buttons */
+        .search-options {
+            display: flex; gap: 12px; margin-top: 10px;
+        }
+        /* Button styling within search options */
+        .search-options button {
+            padding: 12px 18px; border: none;
+            background: linear-gradient(45deg, #007BFF, #0056b3);
+            color: white; border-radius: 8px;
+            cursor: pointer; transition: transform 0.2s, background 0.3s;
+            opacity: 0; animation: buttonFadeIn 0.5s ease forwards;
+        }
+        /* Hover effect for search option buttons */
+        .search-options button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #0056b3, #003f7f);
+        }
+        /* Animation delays for each button in search options */
+        .search-options button:nth-child(1) { animation-delay: 1s; }
+        .search-options button:nth-child(2) { animation-delay: 1.1s; }
+        .search-options button:nth-child(3) { animation-delay: 1.2s; }
+
+        /* Red bar styling */
+        .red-bar {
+            width: 100%; height: 8px;
+            background: red; margin: 20px 0;
+            border-radius: 4px; opacity: 0;
+            animation: fadeInUp 1s ease forwards; animation-delay: 1.3s;
+        }
+        /* Info sections styling */
+        .info-sections {
+            display: flex; justify-content: space-around; margin-top: 20px;
+        }
+        /* Button styling within info sections */
+        .info-sections button {
+            padding: 14px 24px; border: none;
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white; border-radius: 8px;
+            cursor: pointer; font-size: 16px; font-weight: 500;
+            transition: transform 0.2s, background 0.3s;
+            opacity: 0; animation: buttonFadeIn 0.5s ease forwards;
+        }
+        /* Hover effect for info section buttons */
+        .info-sections button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #1e7e34, #14532d);
+        }
+        /* Animation delays for each button in info sections */
+        .info-sections button:nth-child(1) { animation-delay: 1.4s; }
+        .info-sections button:nth-child(2) { animation-delay: 1.5s; }
+
+        /* Footer section styling */
+        .footer {
+            text-align: center; margin-top: 30px; padding-top: 15px;
+            border-top: 2px solid rgba(0,0,0,0.1);
+            font-size: 16px; opacity: 0;
+            animation: fadeInUp 1s ease forwards; animation-delay: 1.6s;
+        }
+        /* Profile section styling */
+        .profile-section {
+            text-align: center; font-size: 22px; opacity: 0;
+            animation: fadeInUp 1s ease forwards; animation-delay: 0.9s;
+        }
+        /* Login section styling */
+        .login {
+            font-size: 14px; margin-top: 5px;
+        }
+        /* Styling for login link */
+        .login a {
+            text-decoration: none; color: #007BFF; font-weight: bold;
+            transition: color 0.3s;
+        }
+        /* Hover effect for login link */
+        .login a:hover { color: #0056b3; }
+        /* Logo styling */
+        .logo {
+            width: 100px; height: auto; opacity: 0;
+            animation: fadeInUp 1s ease forwards; animation-delay: 0.2s;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header section containing the logo, title, and login -->
+    <div class="header">
+        <div>
+            <img src="../images/minareticon.svg" alt="University of Tampa Logo" class="logo">
+        </div>
+        <div>
+            <h1>CIRT</h1>
+            <p>Criminology Institute for Research and Training</p>
+        </div>
+        <div class="profile-section">
+            &#128100;
+            <div class="login"><a href="#">Sign In / Log In</a></div>
+        </div>
+    </div>
+    <!-- Navigation section with links -->
+    <div class="nav">
+        <span>About</span>
+        <span>Contacts</span>
+        <span>Special Collection</span>
+        <span>Help</span>
+        <span>Search</span>
+    </div>
+    <!-- Search bar and options -->
+    <div class="search-bar">
+        <input type="text" placeholder="Search for resources...">
+        <div class="search-options">
+            <button>Books</button>
+            <button>Databases</button>
+            <button>Journals</button>
+        </div>
+    </div>
+    <!-- Red bar separator -->
+    <div class="red-bar"></div>
+    <!-- Info sections buttons -->
+    <div class="info-sections">
+        <button>Intro to Research</button>
+        <button>Citation Help</button>
+    </div>
+    <!-- Footer section with links -->
+    <div class="footer">
+        <p><strong>Popular Questions</strong> | <strong>Featured Articles</strong></p>
+    </div>
+</div>
+</body>
+</html>
