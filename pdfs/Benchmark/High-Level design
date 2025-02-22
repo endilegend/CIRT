@@ -1,6 +1,0 @@
-For our website we will have 4 main frontend pages
-- The home page(will contain anchored links to all of the other pages)
-- The search page(will contain results after initial search in the home page)
-- The PDF page(will contain the PDF's of submitted journals, will also contain the edito
-- The log-in/Create and account page( allow users to sign in as gain acces to their information from the database)
-There may be more smaller pages in future but these will be the main pages
