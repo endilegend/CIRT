@@ -1,86 +1,76 @@
 const express = require("express");
-const cors = require("cors");
-const db = require("./db"); // Import the MySQL database connection
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const db = require("./db");
 
 const app = express();
-const PORT = 5050;
+const PORT = 3000;
+
+// Ensure the uploads directory exists
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Uploads directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
+  },
+});
+const upload = multer({ storage });
 
 // Middleware
-app.use(express.json()); // Allows JSON data in requests
-app.use(cors()); // Enables Cross-Origin requests (optional)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static("uploads")); // Serve static files
 
-// Root Route (Check if server is running)
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
-// ✅ **GET All Users (Example Query)**
-app.get("/users", (req, res) => {
-  db.query("SELECT * FROM users", (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Database query error");
-    } else {
-      res.json(results);
-    }
-  });
-});
-
-// ✅ **POST: Create a New User**
-app.post("/users", (req, res) => {
-  const { name, email } = req.body;
-  if (!name || !email) {
-    return res.status(400).json({ error: "Name and email are required" });
+// File Upload Route
+app.post("/upload", upload.single("file"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
   }
 
+  const { filename, path: filepath } = req.file;
+
   db.query(
-    "INSERT INTO users (name, email) VALUES (?, ?)",
-    [name, email],
-    (err, results) => {
+    "INSERT INTO files (filename, filepath) VALUES (?, ?)",
+    [filename, filepath],
+    (err, result) => {
       if (err) {
-        console.error(err);
-        res.status(500).send("Error inserting user");
-      } else {
-        res.status(201).json({ id: results.insertId, name, email });
+        return res.status(500).json({ error: err.message });
       }
+      res.status(200).json({
+        message: "File uploaded successfully!",
+        fileId: result.insertId,
+      });
     }
   );
 });
 
-// ✅ **PUT: Update a User**
-app.put("/users/:id", (req, res) => {
-  const { id } = req.params;
-  const { name, email } = req.body;
-
-  db.query(
-    "UPDATE users SET name = ?, email = ? WHERE id = ?",
-    [name, email, id],
-    (err, results) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error updating user");
-      } else {
-        res.json({ message: "User updated successfully" });
-      }
-    }
-  );
-});
-
-// ✅ **DELETE: Remove a User**
-app.delete("/users/:id", (req, res) => {
-  const { id } = req.params;
-
-  db.query("DELETE FROM users WHERE id = ?", [id], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error deleting user");
-    } else {
-      res.json({ message: "User deleted successfully" });
-    }
+// Get All Uploaded Files
+app.get("/files", (req, res) => {
+  db.query("SELECT * FROM files", (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
   });
 });
 
-// Start the Server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Get a Specific File by ID
+app.get("/files/:id", (req, res) => {
+  const fileId = req.params.id;
+
+  db.query("SELECT * FROM files WHERE id = ?", [fileId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    res.sendFile(path.resolve(__dirname, results[0].filepath));
+  });
 });
+
+// Start Server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
