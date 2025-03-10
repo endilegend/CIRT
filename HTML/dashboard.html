@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard - Upload Article</title>
+    <style>
+      /* Basic styling for the drag & drop area */
+      #dropzone {
+        width: 100%;
+        max-width: 500px;
+        height: 200px;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 20px auto;
+        color: #555;
+        font-size: 18px;
+        cursor: pointer;
+      }
+      #dropzone.hover {
+        border-color: #333;
+        color: #333;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      label,
+      select,
+      input,
+      button {
+        display: block;
+        margin: 10px auto;
+        max-width: 500px;
+      }
+      #message,
+      #userInfo {
+        text-align: center;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Upload Your Article</h1>
+
+    <!-- Drag and Drop Area -->
+    <div id="dropzone">Drag and drop your PDF here or click to select</div>
+    <!-- Hidden file input triggered by clicking dropzone -->
+    <input
+      type="file"
+      id="fileInput"
+      accept="application/pdf"
+      style="display: none"
+    />
+
+    <!-- Article Type Selector -->
+    <label for="articleType">Article Type:</label>
+    <select id="articleType">
+      <option value="Article">Article</option>
+      <option value="Journal">Journal</option>
+      <option value="Poster">Poster</option>
+      <option value="Paper">Paper</option>
+    </select>
+
+    <!-- Keywords input -->
+    <label for="keywords">Keywords (comma-separated):</label>
+    <input
+      type="text"
+      id="keywords"
+      placeholder="e.g., technology, science, research"
+    />
+
+    <!-- Display logged-in user info -->
+    <div id="userInfo"></div>
+
+    <!-- Upload Button -->
+    <button id="uploadButton">Upload Article</button>
+
+    <!-- Div for messages -->
+    <div id="message"></div>
+
+    <!-- Include the dashboard.js script -->
+    <script src="dashboard.js" type="module"></script>
+  </body>
+</html>
