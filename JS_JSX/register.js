@@ -1,17 +1,9 @@
-// // Import Firebase functions
-// import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-// import {
-//   getAuth,
-//   createUserWithEmailAndPassword,
-//   sendEmailVerification,
-// } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-// Import Firebase functions
-const { initializeApp } = require("firebase/app");
-const {
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
-} = require("firebase/auth");
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -30,13 +22,18 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 function registerUser() {
-  console.log("Register button clicked!");
+  console.log("Register button clicked!"); // Debugging
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   const fName = document.getElementById("first-name").value;
   const lName = document.getElementById("last-name").value;
   const errorMessage = document.getElementById("error-message");
+
+  console.log("Email:", email); // Debugging
+  console.log("Password:", password); // Debugging
+  console.log("First Name:", fName); // Debugging
+  console.log("Last Name:", lName); // Debugging
 
   if (!email || !password || !fName || !lName) {
     errorMessage.textContent = "Please fill in all fields!";
@@ -79,10 +76,10 @@ function registerUser() {
           console.error("Error sending data to backend:", error);
         });
 
-      // Redirect to login page after registration
-      setTimeout(() => {
-        window.location.href = "signin.html";
-      }, 2000);
+      // Comment out the page redirection
+      // setTimeout(() => {
+      //   window.location.href = "signin.html";
+      // }, 2000);
     })
     .catch((error) => {
       console.error("Firebase Registration Failed:", error.code, error.message);

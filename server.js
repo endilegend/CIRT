@@ -16,11 +16,11 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // PostgreSQL Database Connection (from your Render database)
 const db = new Pool({
-  host: process.env.PG_HOST || "dpg-cv7gktfnoe9s73aj6fmg-a",
-  user: process.env.PG_USER || "cirt_user",
-  password: process.env.PG_PASSWORD || "Z4VCwVjetTb0nDsDfEUoQmxc2m0hh7i6",
-  database: process.env.PG_DATABASE || "cirt",
-  port: process.env.PG_PORT || 5432,
+  host: process.env.PG_HOST,
+  user: process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
+  database: process.env.PG_DATABASE,
+  port: process.env.PG_PORT,
   ssl: { rejectUnauthorized: false }, // Required for Render PostgreSQL
 });
 
