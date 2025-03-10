@@ -1,4 +1,7 @@
-const { Pool } = require("pg"); // PostgreSQL client for Node.js
+// PostgreSQL client for Node.js
+const { Pool } = require("pg");
+require("dotenv").config();
+
 require("dotenv").config(); // Load environment variables
 
 // PostgreSQL Database Connection (Replace with your Render DB details)
