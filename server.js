@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files (Frontend files in 'public' folder)
 app.use(express.static(path.join(__dirname, "public")));
 
-// PostgreSQL Database Connection (from your Render database)
+// PostgreSQL Database Connection (ensure PG_DATABASE is set to "CIRT")
 const db = new Pool({
   host: process.env.PG_HOST,
   user: process.env.PG_USER,
@@ -23,6 +23,8 @@ const db = new Pool({
   port: process.env.PG_PORT,
   ssl: { rejectUnauthorized: false }, // Required for Render PostgreSQL
 });
+const cors = require("cors");
+app.use(cors());
 
 // Verify database connection
 db.connect()
@@ -44,7 +46,7 @@ app.post("/register-user", async (req, res) => {
   }
 
   const sql =
-    "INSERT INTO USERS (ID, F_NAME, L_NAME, EMAIL, ROLE) VALUES ($1, $2, $3, $4, $5)";
+    "INSERT INTO users (id, f_name, l_name, email, user_role) VALUES ($1, $2, $3, $4, $5)";
 
   try {
     await db.query(sql, [uid, fName, lName, email, role]);
@@ -52,8 +54,8 @@ app.post("/register-user", async (req, res) => {
       .status(201)
       .json({ message: "✅ User registered in PostgreSQL successfully!" });
   } catch (err) {
-    console.error("❌ Database Insert Error:", err);
-    res.status(500).json({ error: "Database error" });
+    console.error("❌ Database Insert Error:", err.message, err.stack);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -68,16 +70,8 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
-// ✅ **3. File Upload Setup Using Multer**
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "uploads");
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
-  },
-});
+// ✅ **3. File Upload Setup Using Multer with Memory Storage**
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ✅ **4. File Upload Endpoint**
@@ -86,17 +80,18 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     return res.status(400).send("❌ No file uploaded.");
   }
 
-  const filePath = req.file.path;
+  // Use file buffer (req.file.buffer) to insert binary data (BYTEA)
+  const fileBuffer = req.file.buffer;
   const authorId = req.body.author_id || null;
   const status = "Sent";
   const type = req.body.type || "Article";
 
   const sql =
-    "INSERT INTO ARTICLE (PDF_PATH, AUTHOR_ID, STATUS, TYPE) VALUES ($1, $2, $3, $4)";
+    "INSERT INTO article (pdf_file, author_id, status, type) VALUES ($1, $2, $3, $4)";
 
   try {
-    await db.query(sql, [filePath, authorId, status, type]);
-    res.send({ message: "✅ File uploaded successfully", filePath });
+    await db.query(sql, [fileBuffer, authorId, status, type]);
+    res.send({ message: "✅ File uploaded successfully" });
   } catch (err) {
     console.error("❌ Database Insertion Error:", err);
     res.status(500).send("Database error.");
@@ -106,7 +101,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 // ✅ **5. Fetch All Articles**
 app.get("/articles", async (req, res) => {
   try {
-    const results = await db.query("SELECT * FROM ARTICLE");
+    const results = await db.query("SELECT * FROM article");
     res.json(results.rows);
   } catch (err) {
     console.error("❌ Database Query Error:", err);
@@ -118,7 +113,7 @@ app.get("/articles", async (req, res) => {
 app.get("/articles/:id", async (req, res) => {
   const articleId = req.params.id;
   try {
-    const result = await db.query("SELECT * FROM ARTICLE WHERE ID = $1", [
+    const result = await db.query("SELECT * FROM article WHERE id = $1", [
       articleId,
     ]);
     res.json(result.rows);

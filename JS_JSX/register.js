@@ -22,7 +22,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 function registerUser() {
-  console.log("Register button clicked!"); // Debugging
+  console.log("Register button clicked!");
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -30,10 +30,10 @@ function registerUser() {
   const lName = document.getElementById("last-name").value;
   const errorMessage = document.getElementById("error-message");
 
-  console.log("Email:", email); // Debugging
-  console.log("Password:", password); // Debugging
-  console.log("First Name:", fName); // Debugging
-  console.log("Last Name:", lName); // Debugging
+  console.log("Email:", email);
+  console.log("Password:", password);
+  console.log("First Name:", fName);
+  console.log("Last Name:", lName);
 
   if (!email || !password || !fName || !lName) {
     errorMessage.textContent = "Please fill in all fields!";
@@ -48,13 +48,17 @@ function registerUser() {
       console.log("Firebase Registration Successful:", user);
 
       // Send verification email
-      sendEmailVerification(user).then(() => {
-        console.log("Verification email sent to:", user.email);
-        errorMessage.textContent = "Verification email sent!";
-        errorMessage.style.color = "green";
-      });
+      sendEmailVerification(user)
+        .then(() => {
+          console.log("Verification email sent to:", user.email);
+          errorMessage.textContent = "Verification email sent!";
+          errorMessage.style.color = "green";
+        })
+        .catch((err) => {
+          console.error("Error sending verification email:", err);
+        });
 
-      // Send user data to backend for MySQL storage
+      // Send user data to backend for PostgreSQL storage
       fetch("http://localhost:4000/register-user", {
         method: "POST",
         headers: {
@@ -65,21 +69,21 @@ function registerUser() {
           email: user.email,
           fName: fName,
           lName: lName,
-          role: "Author", // Default role
+          // No need to send role since backend sets it as "Author"
         }),
       })
         .then((response) => response.json())
         .then((data) => {
-          console.log("MySQL Registration Successful:", data);
+          console.log("PostgreSQL Registration Successful:", data);
         })
         .catch((error) => {
           console.error("Error sending data to backend:", error);
         });
 
-      // Comment out the page redirection
-      // setTimeout(() => {
-      //   window.location.href = "signin.html";
-      // }, 2000);
+      // Redirect after a short delay
+      setTimeout(() => {
+        window.location.href = "signin.html";
+      }, 2000);
     })
     .catch((error) => {
       console.error("Firebase Registration Failed:", error.code, error.message);
