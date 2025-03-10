@@ -1,10 +1,17 @@
+// // Import Firebase functions
+// import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+// import {
+//   getAuth,
+//   createUserWithEmailAndPassword,
+//   sendEmailVerification,
+// } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 // Import Firebase functions
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import {
+const { initializeApp } = require("firebase/app");
+const {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+} = require("firebase/auth");
 
 // Firebase configuration
 const firebaseConfig = {
