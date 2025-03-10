@@ -1,20 +1,21 @@
-const mysql = require("mysql2");
+const { Pool } = require("pg"); // PostgreSQL client for Node.js
+require("dotenv").config(); // Load environment variables
 
-// Create connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "Password1!",
-  database: "CIRT",
+// PostgreSQL Database Connection (Replace with your Render DB details)
+const pool = new Pool({
+  host: process.env.PG_HOST || "dpg-cv7gktfnoe9s73aj6fmg-a",
+  user: process.env.PG_USER || "cirt_user",
+  password: process.env.PG_PASSWORD || "Z4VCwVjetTb0nDsDfEUoQmxc2m0hh7i6",
+  database: process.env.PG_DATABASE || "cirt",
+  port: process.env.PG_PORT || 5432,
+  ssl: { rejectUnauthorized: false }, // Required for Render PostgreSQL
 });
 
-// Connect to MySQL
-db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed: " + err.stack);
-    return;
-  }
-  console.log("Connected to MySQL as id " + db.threadId);
-});
+// Connect to PostgreSQL and check for errors
+pool
+  .connect()
+  .then(() => console.log("✅ Connected to PostgreSQL Database on Render!"))
+  .catch((err) => console.error("❌ Database connection failed:", err));
 
-module.exports = db;
+// Export the connection pool
+module.exports = pool;

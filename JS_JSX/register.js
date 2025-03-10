@@ -27,50 +27,60 @@ function registerUser() {
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+  const fName = document.getElementById("first-name").value;
+  const lName = document.getElementById("last-name").value;
   const errorMessage = document.getElementById("error-message");
 
-  // Ensure errorMessage is not null
-  if (!errorMessage) {
-    console.error("Error message element not found!");
+  if (!email || !password || !fName || !lName) {
+    errorMessage.textContent = "Please fill in all fields!";
+    errorMessage.style.color = "red";
     return;
   }
 
-  // Clear previous error messages
-  errorMessage.textContent = "";
-
-  if (!email || !password) {
-    errorMessage.textContent = "Please enter email and password!";
-    errorMessage.style.color = "black";
-    return;
-  }
-
+  // Register the user in Firebase
   createUserWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
       const user = userCredential.user;
-      console.log("Registration successful:", user);
+      console.log("Firebase Registration Successful:", user);
 
       // Send verification email
-      sendEmailVerification(user)
-        .then(() => {
-          errorMessage.textContent =
-            "Verification email sent! Please check your inbox.";
-          errorMessage.style.color = "green";
-          console.log("Email verification sent to:", user.email);
+      sendEmailVerification(user).then(() => {
+        console.log("Verification email sent to:", user.email);
+        errorMessage.textContent = "Verification email sent!";
+        errorMessage.style.color = "green";
+      });
 
-          // Redirect to login page (optional)
-          window.location.href = "signin.html";
+      // Send user data to backend for MySQL storage
+      fetch("http://localhost:4000/register-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          fName: fName,
+          lName: lName,
+          role: "Author", // Default role
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("MySQL Registration Successful:", data);
         })
         .catch((error) => {
-          console.error("Error sending verification email:", error);
-          errorMessage.textContent =
-            "Error: Could not send verification email.";
-          errorMessage.style.color = "black";
+          console.error("Error sending data to backend:", error);
         });
+
+      // Redirect to login page after registration
+      setTimeout(() => {
+        window.location.href = "signin.html";
+      }, 2000);
     })
     .catch((error) => {
-      console.error("Registration failed:", error.code, error.message);
+      console.error("Firebase Registration Failed:", error.code, error.message);
       errorMessage.textContent = `Error: ${error.message}`;
-      errorMessage.style.color = "black";
+      errorMessage.style.color = "red";
     });
 }
 
