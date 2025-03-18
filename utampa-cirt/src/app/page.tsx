@@ -220,7 +220,7 @@ export default function HomePage() {
               </Link>
             ) : (
               <Link href="/register">
-                <Button className="bg-white text-utred hover:bg-gray-100 py-2 px-6 rounded-md text-lg">
+                <Button className="bg-white text-utred hover:bg-gray-300 hover:text-black py-2 px-6 rounded-md text-lg">
                   Create Account
                 </Button>
               </Link>
