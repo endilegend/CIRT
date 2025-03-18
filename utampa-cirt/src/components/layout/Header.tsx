@@ -75,7 +75,7 @@ export function Header() {
               <Link href="/dashboard">
                 <Button
                   variant="outline"
-                  className="text-white border-white hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark"
                 >
                   Dashboard
                 </Button>
@@ -83,7 +83,7 @@ export function Header() {
               <button onClick={() => signOut(auth)}>
                 <Button
                   variant="ghost"
-                  className="text-white hover:text-gray-200 hover:bg-utred-dark"
+                  className="text-white  hover:text-gray-200 hover:bg-utred-dark"
                 >
                   Sign Out
                 </Button>
@@ -94,7 +94,7 @@ export function Header() {
               <Link href="/signin">
                 <Button
                   variant="outline"
-                  className="text-white border-white hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark"
                 >
                   Sign In
                 </Button>

@@ -68,7 +68,7 @@ export default function HomePage() {
                   <Link href="/dashboard">
                     <Button
                       variant="outline"
-                      className="border-white text-white hover:bg-white/10 py-2 px-6 rounded-md text-lg"
+                      className="border-white text-black hover:bg-gray-300 py-2 px-6 rounded-md text-lg"
                     >
                       Dashboard
                     </Button>
@@ -77,7 +77,7 @@ export default function HomePage() {
                   <Link href="/register">
                     <Button
                       variant="outline"
-                      className="border-white text-white hover:bg-white/10 py-2 px-6 rounded-md text-lg"
+                      className="border-white text-black hover:bg-gray-300 py-2 px-6 rounded-md text-lg"
                     >
                       Register Account
                     </Button>
@@ -214,7 +214,7 @@ export default function HomePage() {
           <div className="flex justify-center gap-4 flex-wrap">
             {isLoggedIn ? (
               <Link href="/dashboard">
-                <Button className="bg-white text-utred hover:bg-gray-100 py-2 px-6 rounded-md text-lg">
+                <Button className="bg-white text-utred hover:bg-gray-300 hover:text-black py-2 px-6 rounded-md text-lg">
                   Go to Dashboard
                 </Button>
               </Link>
@@ -228,7 +228,7 @@ export default function HomePage() {
             <Link href="/about">
               <Button
                 variant="outline"
-                className="border-white text-white hover:bg-white/10 py-2 px-6 rounded-md text-lg"
+                className="border-white text-utred hover:bg-gray-300 py-2 px-6 rounded-md text-lg"
               >
                 Learn More
               </Button>
