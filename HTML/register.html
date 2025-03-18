@@ -3,15 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="UTampa CIRT database" />
-    <link rel="stylesheet" href="../CSS/registerStyles.css" />
-    <script src="../JS_JSX/register.js" type="module" defer></script>
-    <title>CIRT Register</title>
+    <meta name="description" content="UTampa CIRT data base" />
+    <meta
+      name="keywords"
+      content="University of Tampa, UTampa, CIRT,
+    Criminal Justice, Criminology Institute for Research and Training, database"
+    />
+    <link rel="icon" href="images/UT-Icon.png" />
+    <link rel="stylesheet" href="registerStyles.css" />
+    <link rel="script" href="register.js" />
+    <title>CIRT Log-In</title>
   </head>
+
   <body>
     <div class="section-one">
       <div class="header">
-        <div class="header-left"><h3>CIRT</h3></div>
+        <div class="header-left">
+          <h3>CIRT</h3>
+        </div>
         <div class="header-middle">
           <h3>Criminology Institute for Research and Training</h3>
         </div>
@@ -21,27 +30,26 @@
         </div>
       </div>
     </div>
-
     <div class="section-two">
       <div class="section-two-left">
         <div class="enter">
           <form id="register-form">
-            <label for="first-name">First Name:</label>
-            <input type="text" id="first-name" name="first-name" required />
-
-            <label for="last-name">Last Name:</label>
-            <input type="text" id="last-name" name="last-name" required />
-
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required />
-
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required />
-
             <button type="button" id="register">Register</button>
-            <p id="error-message"></p>
           </form>
         </div>
+      </div>
+
+      <div class="section-two-right">
+        <img
+          src="assets/Picture1.jpg"
+          alt="criminology"
+          height="200px"
+          width="250px"
+        />
       </div>
     </div>
   </body>
