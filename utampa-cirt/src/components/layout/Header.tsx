@@ -75,7 +75,7 @@ export function Header() {
               <Link href="/dashboard">
                 <Button
                   variant="outline"
-                  className="text-white border-white hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark"
                 >
                   Dashboard
                 </Button>
