@@ -11,7 +11,7 @@ CREATE TABLE users (
 
 CREATE TABLE article (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    pdf_path VARCHAR(255) NOT NULL,  -- storing the file path instead of the PDF content
+    pdf_path VARCHAR(255) NOT NULL,
     author_id VARCHAR(250),
     status ENUM('Sent', 'Under Review', 'Approved', 'Declined'),
     type ENUM('Article', 'Journal', 'Poster', 'Paper'),
