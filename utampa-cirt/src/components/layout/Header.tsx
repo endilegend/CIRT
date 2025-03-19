@@ -81,12 +81,9 @@ export function Header() {
                 </Button>
               </Link>
               <button onClick={() => signOut(auth)}>
-                <Button
-                  variant="ghost"
-                  className="text-white hover:text-gray-200 hover:bg-utred-dark"
-                >
+                <span className="text-white hover:text-gray-200 hover:bg-utred-dark">
                   Sign Out
-                </Button>
+                </span>
               </button>
             </div>
           ) : (

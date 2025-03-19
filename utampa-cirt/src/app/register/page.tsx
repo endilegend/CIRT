@@ -7,6 +7,7 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  signOut,
 } from "firebase/auth";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // Create the user in Firebase
+      // Create the user in Firebase (automatically signs them in)
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -84,6 +85,10 @@ export default function RegisterPage() {
 
       // Send verification email
       await sendEmailVerification(user);
+
+      // Sign the user out immediately so they must sign in manually
+      await signOut(auth);
+
       setSuccessMessage("Verification email sent! Registration successful.");
 
       // Send user data to backend for PostgreSQL storage
@@ -105,12 +110,12 @@ export default function RegisterPage() {
       setTimeout(() => {
         router.push("/signin");
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         setErrorMessage(`Error: ${error.message ?? "Unknown error occurred"}`);
       } else {
         setErrorMessage(
-          "An unexpected error occurred. Could not rederict to sign-in page"
+          "An unexpected error occurred. Could not redirect to sign-in page"
         );
       }
     }
