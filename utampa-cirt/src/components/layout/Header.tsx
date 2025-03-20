@@ -75,18 +75,15 @@ export function Header() {
               <Link href="/dashboard">
                 <Button
                   variant="outline"
-                  className="text-white border-white hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark"
                 >
                   Dashboard
                 </Button>
               </Link>
               <button onClick={() => signOut(auth)}>
-                <Button
-                  variant="ghost"
-                  className="text-white hover:text-gray-200 hover:bg-utred-dark"
-                >
+                <span className="text-white hover:text-gray-200 hover:bg-utred-dark">
                   Sign Out
-                </Button>
+                </span>
               </button>
             </div>
           ) : (

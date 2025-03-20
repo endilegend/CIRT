@@ -6,9 +6,10 @@ import { Footer } from "./Footer";
 
 type MainLayoutProps = {
   children: ReactNode;
+  isAuthenticated?: boolean;
 };
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children, isAuthenticated }: MainLayoutProps) {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

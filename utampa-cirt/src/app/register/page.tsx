@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // For client-side navigation
+import { useRouter } from "next/navigation";
 import { initializeApp, FirebaseError } from "firebase/app";
 import {
   getAuth,
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  signOut,
 } from "firebase/auth";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import Link from "next/link";
 
-// Firebase configuration object
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCj7ll6PomPGDKNx981w6HJu3IB97inDKY",
   authDomain: "cirt-9d13f.firebaseapp.com",
@@ -34,7 +35,7 @@ const firebaseConfig = {
   measurementId: "G-XYDPTRCE75",
 };
 
-// Initialize Firebase and Auth
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -44,14 +45,12 @@ export default function RegisterPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handle form submission and registration logic
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
     setLoading(true);
 
-    // Retrieve form values using FormData
     const formData = new FormData(e.currentTarget);
     const fName = formData.get("first-name") as string;
     const lName = formData.get("last-name") as string;
@@ -59,14 +58,12 @@ export default function RegisterPage() {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirm-password") as string;
 
-    // Validate required fields
     if (!fName || !lName || !email || !password || !confirmPassword) {
       setErrorMessage("Please fill in all fields!");
       setLoading(false);
       return;
     }
 
-    // Validate that passwords match
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match!");
       setLoading(false);
@@ -74,20 +71,20 @@ export default function RegisterPage() {
     }
 
     try {
-      // Create the user in Firebase
+      // Register user in Firebase
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       const user = userCredential.user;
-
-      // Send verification email
       await sendEmailVerification(user);
+      await signOut(auth);
+
       setSuccessMessage("Verification email sent! Registration successful.");
 
-      // Send user data to backend for PostgreSQL storage
-      const res = await fetch("http://localhost:4000/register-user", {
+      // Send user data to Next.js API for MySQL storage
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -95,23 +92,21 @@ export default function RegisterPage() {
           email: user.email,
           fName: fName,
           lName: lName,
-          // Backend sets role as "Author" by default
         }),
       });
-      const data = await res.json();
-      console.log("PostgreSQL Registration Successful:", data);
 
-      // Redirect to sign in page after a short delay
+      if (!res.ok) throw new Error("Failed to save user in MySQL");
+
+      console.log("User successfully saved to MySQL");
+
       setTimeout(() => {
         router.push("/signin");
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         setErrorMessage(`Error: ${error.message ?? "Unknown error occurred"}`);
       } else {
-        setErrorMessage(
-          "An unexpected error occurred. Could not rederict to sign-in page"
-        );
+        setErrorMessage("An unexpected error occurred.");
       }
     }
     setLoading(false);
@@ -174,9 +169,6 @@ export default function RegisterPage() {
                       placeholder="your.email@example.com"
                       required
                     />
-                    <p className="text-xs text-gray-500">
-                      Use your academic or institutional email if possible
-                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -187,10 +179,6 @@ export default function RegisterPage() {
                       type="password"
                       required
                     />
-                    <p className="text-xs text-gray-500">
-                      Password must be at least 8 characters with at least one
-                      uppercase letter, one number, and one special character
-                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -238,18 +226,12 @@ export default function RegisterPage() {
                 </div>
               </form>
               {errorMessage && (
-                <div
-                  id="error-message"
-                  className="mt-4 text-center text-sm text-red-600"
-                >
+                <div className="mt-4 text-center text-sm text-red-600">
                   {errorMessage}
                 </div>
               )}
               {successMessage && (
-                <div
-                  id="success-message"
-                  className="mt-4 text-center text-sm text-green-600"
-                >
+                <div className="mt-4 text-center text-sm text-green-600">
                   {successMessage}
                 </div>
               )}
