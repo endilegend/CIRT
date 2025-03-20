@@ -37,7 +37,10 @@ export function Header() {
     <header className="bg-utred text-white">
       <div className="ut-container flex items-center justify-between h-16">
         <div className="flex items-center space-x-4">
-          <Link href="https://www.ut.edu/" className="flex items-center space-x-2">
+          <Link
+            href="https://www.ut.edu"
+            className="flex items-center space-x-2"
+          >
             <div className="relative h-8 w-8">
               <Image
                 src="/images/ut-logo-white.png"
