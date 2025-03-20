@@ -1,12 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Calendar, Download, Users } from "lucide-react";
 import Link from "next/link";
 
 export default function SearchPage() {
+  const [query, setQuery] = useState("");
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/search/results?search=${encodeURIComponent(query)}`);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="bg-slate-50 min-h-screen py-8">
@@ -15,21 +36,29 @@ export default function SearchPage() {
           <div className="mb-8 text-center max-w-3xl mx-auto">
             <h1 className="text-3xl font-bold mb-4">CIRT Database Search</h1>
             <p className="text-gray-600 mb-6">
-              Search our comprehensive collection of criminology research, papers, journals, and more.
+              Search our comprehensive collection of criminology research,
+              papers, journals, and more.
             </p>
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="flex-grow">
-                  <Input
-                    placeholder="Search by title, author, keywords..."
-                    className="w-full"
-                  />
+              <form onSubmit={handleSubmit}>
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <div className="flex-grow">
+                    <Input
+                      placeholder="Search by title, author, keywords..."
+                      className="w-full"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="bg-utred hover:bg-utred-dark"
+                  >
+                    Search
+                  </Button>
                 </div>
-                <Button className="bg-utred hover:bg-utred-dark">
-                  Search
-                </Button>
-              </div>
+              </form>
 
               <div className="flex flex-wrap justify-center gap-4">
                 <Button variant="outline" size="sm">
@@ -75,7 +104,9 @@ export default function SearchPage() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Search Results</h2>
-              <div className="text-sm text-gray-600">Showing {searchResults.length} of 324 results</div>
+              <div className="text-sm text-gray-600">
+                Showing {searchResults.length} of 324 results
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 mb-8">
@@ -98,9 +129,7 @@ export default function SearchPage() {
                         </h3>
                       </Link>
 
-                      <p className="text-gray-600 mb-4">
-                        {result.abstract}
-                      </p>
+                      <p className="text-gray-600 mb-4">{result.abstract}</p>
 
                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                         <div className="flex items-center text-gray-500">
@@ -134,7 +163,11 @@ export default function SearchPage() {
               <Button variant="outline" size="sm" disabled>
                 Previous
               </Button>
-              <Button variant="outline" size="sm" className="bg-utred text-white hover:bg-utred-dark">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-utred text-white hover:bg-utred-dark"
+              >
                 1
               </Button>
               <Button variant="outline" size="sm">
@@ -165,7 +198,7 @@ const popularKeywords = [
   "Social Justice",
   "Crime Prevention",
   "Forensics",
-  "Rehabilitation"
+  "Rehabilitation",
 ];
 
 const searchResults = [
@@ -174,7 +207,8 @@ const searchResults = [
     title: "The Impact of Community Policing on Urban Crime Rates",
     type: "Article",
     date: "March 10, 2025",
-    abstract: "This study examines the effectiveness of community policing strategies in major metropolitan areas over a five-year period. Results indicate that community engagement significantly reduces violent crime rates when implemented consistently.",
+    abstract:
+      "This study examines the effectiveness of community policing strategies in major metropolitan areas over a five-year period. Results indicate that community engagement significantly reduces violent crime rates when implemented consistently.",
     authors: ["Dr. Sarah Johnson", "Prof. Michael Chen"],
     citations: 12,
     views: 247,
@@ -184,7 +218,8 @@ const searchResults = [
     title: "Digital Forensics in Modern Criminal Investigations",
     type: "Journal",
     date: "February 28, 2025",
-    abstract: "An analysis of how digital forensic techniques have evolved and their application in solving complex cases. This research explores modern methodologies and their effectiveness compared to traditional investigative approaches.",
+    abstract:
+      "An analysis of how digital forensic techniques have evolved and their application in solving complex cases. This research explores modern methodologies and their effectiveness compared to traditional investigative approaches.",
     authors: ["Prof. Michael Rodriguez", "Dr. Lisa Wang"],
     citations: 8,
     views: 183,
@@ -194,7 +229,8 @@ const searchResults = [
     title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
     type: "Paper",
     date: "February 15, 2025",
-    abstract: "This paper compares the effectiveness of various prevention programs targeting at-risk youth across different socioeconomic backgrounds. Our findings suggest that early intervention produces the most significant long-term positive outcomes.",
+    abstract:
+      "This paper compares the effectiveness of various prevention programs targeting at-risk youth across different socioeconomic backgrounds. Our findings suggest that early intervention produces the most significant long-term positive outcomes.",
     authors: ["Dr. Emily Chen", "Prof. David Williams"],
     citations: 5,
     views: 129,
@@ -204,7 +240,8 @@ const searchResults = [
     title: "The Evolution of Corrections Facilities: Design and Rehabilitation",
     type: "Article",
     date: "January 22, 2025",
-    abstract: "An examination of how correctional facility design has evolved to support rehabilitation goals. This study analyzes architectural trends and their impact on inmate behavior and recidivism rates.",
+    abstract:
+      "An examination of how correctional facility design has evolved to support rehabilitation goals. This study analyzes architectural trends and their impact on inmate behavior and recidivism rates.",
     authors: ["Dr. James Peterson", "Dr. Maria Gonzalez"],
     citations: 15,
     views: 342,

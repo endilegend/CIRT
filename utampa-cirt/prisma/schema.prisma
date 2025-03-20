@@ -24,10 +24,12 @@ model Article {
   author_id  String?
   status     Status?
   type       ArticleType?
+  createdAt  DateTime  @default(now())
 
   author     User?     @relation(fields: [author_id], references: [id])
   keywords   Keyword[]
 }
+
 
 model Keyword {
   id         Int      @id @default(autoincrement())

@@ -1,3 +1,7 @@
+"use client";
+
+import React, { useState, useRef } from "react";
+import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,12 +32,234 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { getAuth } from "firebase/auth";
+
+// -----------------------------------------------------------------------------
+// SAMPLE DATA & HELPERS
+// -----------------------------------------------------------------------------
+
+const myPublications = [
+  {
+    id: 1,
+    title: "The Impact of Community Policing on Urban Crime Rates",
+    type: "Article",
+    date: "Mar 10, 2025",
+    status: "Approved",
+    views: 47,
+  },
+  {
+    id: 2,
+    title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
+    type: "Paper",
+    date: "Feb 15, 2025",
+    status: "Under Review",
+    views: 12,
+  },
+  {
+    id: 3,
+    title:
+      "Technology in Law Enforcement: Current Trends and Future Applications",
+    type: "Poster",
+    date: "Jan 22, 2025",
+    status: "Sent",
+    views: 94,
+  },
+];
+
+function getStatusClass(status: string) {
+  switch (status) {
+    case "Approved":
+      return "px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full";
+    case "Under Review":
+      return "px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full";
+    case "Sent":
+      return "px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full";
+    case "Declined":
+      return "px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full";
+    default:
+      return "px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full";
+  }
+}
+
+// -----------------------------------------------------------------------------
+// DRAG & DROP COMPONENT
+// -----------------------------------------------------------------------------
+
+interface DragDropFileProps {
+  onFileSelect: (file: File) => void;
+}
+
+function DragDropFile({ onFileSelect }: DragDropFileProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      onFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFileSelect(e.target.files[0]);
+    }
+  };
+
+  return (
+    <div
+      className={`border-2 rounded-lg border-dashed p-8 text-center cursor-pointer ${
+        isDragging ? "border-utred" : "border-gray-300"
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={handleClick}
+    >
+      <input
+        type="file"
+        accept="application/pdf"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
+      <div className="mx-auto flex flex-col items-center justify-center gap-4">
+        <FileUp className="h-10 w-10 text-gray-400" />
+        <p className="text-lg font-medium mb-1">Drag and drop your PDF here</p>
+        <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// UPLOAD FORM (DIALOG) COMPONENT
+// -----------------------------------------------------------------------------
+
+interface UploadFormProps {
+  file: File | null;
+}
+
+function UploadForm({ file }: UploadFormProps) {
+  const [paperName, setPaperName] = useState("");
+  const [type, setType] = useState("Article");
+  const [keywords, setKeywords] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!file) {
+      alert("Please select a PDF file first.");
+      return;
+    }
+
+    // Get the current Firebase user and ensure they're authenticated
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      alert("User not authenticated");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("name", paperName);
+      formData.append("type", type);
+      formData.append("keywords", keywords);
+      formData.append("author_id", user.uid);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("Upload error:", data.error);
+        alert("Error uploading file: " + data.error);
+        return;
+      }
+
+      console.log("Upload successful:", data);
+      alert("Upload successful!");
+      // Optionally reset fields or close dialog
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload failed. Check console for details.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+      {file && (
+        <div className="text-sm text-gray-600">
+          <strong>Selected File:</strong> {file.name}
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="article-type">Type</Label>
+        <select
+          id="article-type"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-utred focus:border-utred"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+        >
+          <option value="Article">Article</option>
+          <option value="Journal">Journal</option>
+          <option value="Poster">Poster</option>
+          <option value="Paper">Paper</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="keywords">Keywords (comma-separated)</Label>
+        <Input
+          id="keywords"
+          placeholder="e.g., criminology, research, policy"
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="paperName">Name</Label>
+        <Input
+          id="paperName"
+          placeholder="Enter Name"
+          value={paperName}
+          onChange={(e) => setPaperName(e.target.value)}
+        />
+      </div>
+      <Button type="submit" className="bg-utred hover:bg-utred-dark">
+        Submit
+      </Button>
+    </form>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// MAIN DASHBOARD PAGE
+// -----------------------------------------------------------------------------
 
 export default function DashboardPage() {
   // This is a mocked authenticated page for demo purposes
   const isAuthenticated = true;
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   return (
     <MainLayout isAuthenticated={isAuthenticated}>
@@ -135,28 +361,7 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <div className="mx-auto flex flex-col items-center justify-center gap-4">
-                    <FileUp className="h-10 w-10 text-gray-400" />
-                    <div>
-                      <p className="text-lg font-medium mb-1">
-                        Drag and drop your PDF here
-                      </p>
-                      <p className="text-sm text-gray-500 mb-4">
-                        or click to browse files
-                      </p>
-                      <Input
-                        type="file"
-                        id="fileInput"
-                        accept="application/pdf"
-                        className="hidden"
-                      />
-                      <Button className="bg-utred hover:bg-utred-dark">
-                        Select PDF
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <DragDropFile onFileSelect={(file) => setSelectedFile(file)} />
               </CardContent>
               <CardFooter className="flex justify-between">
                 <div className="text-sm text-gray-500">
@@ -173,37 +378,11 @@ export default function DashboardPage() {
                     <DialogHeader>
                       <DialogTitle>Article Details</DialogTitle>
                       <DialogDescription>
-                        Add additional information about your publication
+                        Provide metadata for your publication
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="article-type">Article Type</Label>
-                        <select
-                          id="article-type"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-utred focus:border-utred"
-                        >
-                          <option value="Article">Article</option>
-                          <option value="Journal">Journal</option>
-                          <option value="Poster">Poster</option>
-                          <option value="Paper">Paper</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="keywords">
-                          Keywords (comma-separated)
-                        </Label>
-                        <Input
-                          id="keywords"
-                          placeholder="e.g., criminology, research, policy"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button className="bg-utred hover:bg-utred-dark">
-                        Submit
-                      </Button>
-                    </DialogFooter>
+                    <UploadForm file={selectedFile} />
+                    <DialogFooter></DialogFooter>
                   </DialogContent>
                 </Dialog>
               </CardFooter>
@@ -269,48 +448,3 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
-
-// Helper function for status styling
-function getStatusClass(status: string) {
-  switch (status) {
-    case "Approved":
-      return "px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full";
-    case "Under Review":
-      return "px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full";
-    case "Sent":
-      return "px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full";
-    case "Declined":
-      return "px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full";
-    default:
-      return "px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full";
-  }
-}
-
-// Sample data
-const myPublications = [
-  {
-    id: 1,
-    title: "The Impact of Community Policing on Urban Crime Rates",
-    type: "Article",
-    date: "Mar 10, 2025",
-    status: "Approved",
-    views: 47,
-  },
-  {
-    id: 2,
-    title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
-    type: "Paper",
-    date: "Feb 15, 2025",
-    status: "Under Review",
-    views: 12,
-  },
-  {
-    id: 3,
-    title:
-      "Technology in Law Enforcement: Current Trends and Future Applications",
-    type: "Poster",
-    date: "Jan 22, 2025",
-    status: "Sent",
-    views: 94,
-  },
-];
