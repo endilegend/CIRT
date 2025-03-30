@@ -1,5 +1,0 @@
-So far in the project, we have designed the database, home page, search page, and pdf page. We have programmed the home and pdf page and the database is being designed to 
-integrate the search function and to display chosen files. 
-
-We have designed the pages in HTML and Tailwind CSS, we are now considering rebuilding it in Vite React with Tailwind as it will create a faster page and allow us to reuse code
-without rewritting it.
