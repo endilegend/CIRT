@@ -45,7 +45,6 @@ const myPublications = [
     type: "Article",
     date: "Mar 10, 2025",
     status: "Approved",
-    views: 47,
   },
   {
     id: 2,
@@ -53,7 +52,6 @@ const myPublications = [
     type: "Paper",
     date: "Feb 15, 2025",
     status: "Under Review",
-    views: 12,
   },
   {
     id: 3,
@@ -62,7 +60,6 @@ const myPublications = [
     type: "Poster",
     date: "Jan 22, 2025",
     status: "Sent",
-    views: 94,
   },
 ];
 
@@ -274,7 +271,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">
@@ -287,6 +284,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   Total publications in database
                 </p>
+                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/publications">
@@ -295,6 +293,31 @@ export default function DashboardPage() {
                     className="text-utred hover:text-utred-dark"
                   >
                     View All
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium">
+                  Review And Edit
+                </CardTitle>
+                <BookOpen className="h-5 w-5 text-utred" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl text-white font-bold">An Ester Egg</div>
+                <p className="text-sm text-gray-600">
+                  Review and edit paper, article, and poster submissions
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Link href="">
+                  <Button
+                    variant="ghost"
+                    className="text-utred hover:text-utred-dark"
+                  >
+                    View Submissions
                   </Button>
                 </Link>
               </CardFooter>
@@ -312,12 +335,13 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   Total views across all your publications
                 </p>
+
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/analytics">
                   <Button
-                    variant="ghost"
-                    className="text-utred hover:text-utred-dark"
+                      variant="ghost"
+                      className="text-utred hover:text-utred-dark"
                   >
                     View Analytics
                   </Button>
@@ -337,6 +361,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   Total publications in system
                 </p>
+                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/search">
@@ -406,7 +431,6 @@ export default function DashboardPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Date Uploaded</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Views</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -423,7 +447,6 @@ export default function DashboardPage() {
                             {pub.status}
                           </span>
                         </TableCell>
-                        <TableCell>{pub.views}</TableCell>
                         <TableCell className="text-right">
                           <Link href={`/dashboard/publications/${pub.id}`}>
                             <Button variant="ghost" size="sm">
