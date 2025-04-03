@@ -22,55 +22,47 @@ import {
 } from "@/components/ui/table";
 
 
-
-
 const myPublications = [
     {
         id: 1,
         title: "The Impact of Community Policing on Urban Crime Rates",
         type: "Article",
         date: "Mar 10, 2025",
-        status: "Under Review",
+        status: "Waiting for review",
     },
     {
         id: 2,
         title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
         type: "Paper",
         date: "Feb 15, 2025",
-        status: "Approved",
+        status: "Waiting for review",
     },
     {
         id: 3,
         title: "Technology in Law Enforcement: Current Trends and Future Applications",
         type: "Poster",
         date: "Jan 22, 2025",
-        status: "Sent",
+        status: "Waiting for review",
     },
     {
         id: 4,
         title: "The Fat Man and The Rat: World Hunger and it's Benefits/Consequences",
         type: "Article",
         date: "April 5, 2025",
-        status: "Approved",
+        status: "Waiting for review",
     },
 ];
 
 function getStatusClass(status: string) {
     switch (status) {
-        case "Approved":
-            return "px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full";
-        case "Under Review":
-            return "px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full";
-        case "Sent":
-            return "px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full";
-        case "Declined":
-            return "px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full";
+        case "Waiting for review":
+            return "px-2 py-1 bg-green-100 text-grey-800 text-xs rounded-full";
         default:
             return "px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full";
     }
 }
 
-export default function UserPublicationsPage() {
+export default function EditorPage() {
     const isAuthenticated = true;
     return (
         <MainLayout isAuthenticated={isAuthenticated}>
@@ -78,17 +70,17 @@ export default function UserPublicationsPage() {
                 <div className="ut-container">
                     {/* Page Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold">My Publications</h1>
+                        <h1 className="text-3xl font-bold">View and Edit</h1>
                         <p className="text-gray-600">
-                            Your submissions/entries
+                            Edit paper, article, and poster submissions
                         </p>
                     </div>
                     <div className="mb-8">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Publications and Their Status</CardTitle>
+                                <CardTitle>Submissions Assigned to You</CardTitle>
                                 <CardDescription className="text-right font-bold text-gray-700">
-                                    Number of publications: 4
+                                    Number of Submissions Assigned: 4
                                 </CardDescription >
                             </CardHeader>
                             <CardContent>
