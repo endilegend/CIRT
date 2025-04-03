@@ -287,7 +287,7 @@ export default function DashboardPage() {
                 <br></br>
               </CardContent>
               <CardFooter>
-                <Link href="/dashboard/publications">
+                <Link href="/dashboard/userpublications">
                   <Button
                     variant="ghost"
                     className="text-utred hover:text-utred-dark"
@@ -312,11 +312,8 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Link href="">
-                  <Button
-                    variant="ghost"
-                    className="text-utred hover:text-utred-dark"
-                  >
+                <Link href="/dashboard/review">
+                  <Button variant="ghost" className="text-utred hover:text-utred-dark">
                     View Submissions
                   </Button>
                 </Link>
