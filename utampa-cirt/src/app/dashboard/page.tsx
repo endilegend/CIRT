@@ -301,14 +301,14 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">
-                  Review And Edit
+                  Review Submissions
                 </CardTitle>
                 <BookOpen className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl text-white font-bold">An Ester Egg</div>
                 <p className="text-sm text-gray-600">
-                  Review and edit paper, article, and poster submissions
+                  Review paper, article, and poster submissions
                 </p>
               </CardContent>
               <CardFooter>
@@ -323,24 +323,24 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">
-                  Publication Views
+                  Edit Submissions
                 </CardTitle>
                 <AreaChart className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">153</div>
+                <div className="text-3xl font-bold"><br></br></div>
                 <p className="text-sm text-gray-600">
-                  Total views across all your publications
+                  View and edit assigned paper, article, and poster submissions
                 </p>
 
               </CardContent>
               <CardFooter>
-                <Link href="/dashboard/analytics">
+                <Link href="/dashboard/editor">
                   <Button
                       variant="ghost"
                       className="text-utred hover:text-utred-dark"
                   >
-                    View Analytics
+                    View Submissions
                   </Button>
                 </Link>
               </CardFooter>
@@ -446,7 +446,7 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/dashboard/publications/${pub.id}`}>
-                            <Button variant="ghost" size="sm">
+                            <Button className="hover:text-utred" size="sm">
                               View
                             </Button>
                           </Link>
@@ -457,7 +457,7 @@ export default function DashboardPage() {
                 </Table>
               </CardContent>
               <CardFooter>
-                <Link href="/dashboard/publications">
+                <Link href="/dashboard/userpublications">
                   <Button variant="outline">View All Publications</Button>
                 </Link>
               </CardFooter>
