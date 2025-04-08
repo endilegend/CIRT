@@ -61,7 +61,7 @@ export default function ReviewPage() {
         setEditorQueries((prev) => ({ ...prev, [id]: value }));
 
         // Example suggestions - Replace with real data logic
-        const allSuggestions = ["endick gay", "ryan sucka", "conor mcn", "Danny boy"];
+        const allSuggestions = ["endi chow", "ryan suca", "conor mcneil", "Danny boy"];
         const filtered = allSuggestions.filter((name) =>
             name.toLowerCase().includes(value.toLowerCase())
         );
