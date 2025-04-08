@@ -24,8 +24,6 @@ import {Input} from "@/components/ui/input";
 import {useRouter} from "next/navigation";
 
 
-
-
 const myPublications = [
     {
         id: 1,
@@ -57,16 +55,24 @@ export default function ReviewPage() {
 
     const [editorQueries, setEditorQueries] = useState<{ [key: number]: string }>({});
     const [submitted, setSubmitted] = useState<{ [key: number]: boolean }>({});
+    const [filteredSuggestions, setFilteredSuggestions] = useState<{ [key: number]: string[] }>({});
 
     const handleInputChange = (id: number, value: string) => {
         setEditorQueries((prev) => ({ ...prev, [id]: value }));
+
+        // Example suggestions - Replace with real data logic
+        const allSuggestions = ["endick gay", "ryan sucka", "conor mcn", "Danny boy"];
+        const filtered = allSuggestions.filter((name) =>
+            name.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredSuggestions((prev) => ({ ...prev, [id]: filtered }));
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>, id: number) => {
         e.preventDefault();
         if (editorQueries[id]?.trim()) {
             console.log(`Searching editors for article ${id}: ${editorQueries[id]}`);
-            setSubmitted((prev) => ({ ...prev, [id]: true })); // Mark as submitted
+            setSubmitted((prev) => ({ ...prev, [id]: true }));
         }
     };
 
@@ -77,9 +83,7 @@ export default function ReviewPage() {
                     {/* Page Header */}
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold">Review</h1>
-                        <p className="text-gray-600">
-                            Review article, paper, and poster submissions
-                        </p>
+                        <p className="text-gray-600">Review article, paper, and poster submissions</p>
                     </div>
 
                     {/* Submissions Card */}
@@ -87,7 +91,9 @@ export default function ReviewPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Submissions/Entries</CardTitle>
-                                <CardDescription>Current submissions waiting to be assigned</CardDescription>
+                                <CardDescription>
+                                    Current submissions waiting to be assigned
+                                </CardDescription>
                                 <CardDescription className="text-right font-bold text-gray-700">
                                     Number of Submissions to Review: {myPublications.length}
                                 </CardDescription>
@@ -109,23 +115,54 @@ export default function ReviewPage() {
                                                 <TableCell className="font-medium">{pub.title}</TableCell>
                                                 <TableCell>{pub.type}</TableCell>
                                                 <TableCell>{pub.date}</TableCell>
-                                                <TableCell>
+                                                <TableCell className="relative">
                                                     <form onSubmit={(e) => handleSubmit(e, pub.id)}>
                                                         {submitted[pub.id] ? (
                                                             <span className="font-semibold text-green-600">Sent</span>
                                                         ) : (
-                                                            <Input
-                                                                placeholder="Search for Editors..."
-                                                                className="px-1"
-                                                                value={editorQueries[pub.id] || ""}
-                                                                onChange={(e) => handleInputChange(pub.id, e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === "Enter") {
-                                                                        e.preventDefault();
-                                                                        handleSubmit(e as any, pub.id);
+                                                            <>
+                                                                <Input
+                                                                    placeholder="Search for Editors..."
+                                                                    className="px-1"
+                                                                    value={editorQueries[pub.id] || ""}
+                                                                    onChange={(e) =>
+                                                                        handleInputChange(pub.id, e.target.value)
                                                                     }
-                                                                }}
-                                                            />
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === "Enter") {
+                                                                            e.preventDefault();
+                                                                            handleSubmit(e as any, pub.id);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {editorQueries[pub.id] &&
+                                                                    filteredSuggestions[pub.id]?.length > 0 && (
+                                                                        <ul className="absolute bg-white border border-gray-200 w-full mt-1 rounded shadow z-10">
+                                                                            {filteredSuggestions[pub.id].map(
+                                                                                (suggestion, index) => (
+                                                                                    <li
+                                                                                        key={index}
+                                                                                        className="px-2 py-1 hover:bg-slate-100 cursor-pointer"
+                                                                                        onClick={() => {
+                                                                                            setEditorQueries((prev) => ({
+                                                                                                ...prev,
+                                                                                                [pub.id]: suggestion,
+                                                                                            }));
+                                                                                            setFilteredSuggestions(
+                                                                                                (prev) => ({
+                                                                                                    ...prev,
+                                                                                                    [pub.id]: [],
+                                                                                                })
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        {suggestion}
+                                                                                    </li>
+                                                                                )
+                                                                            )}
+                                                                        </ul>
+                                                                    )}
+                                                            </>
                                                         )}
                                                     </form>
                                                 </TableCell>
