@@ -14,20 +14,20 @@ export async function GET(req: Request) {
       where: {
         OR: [
           // Match on paper_name
-          { paper_name: { contains: search, mode: "insensitive" } },
+          { paper_name: { contains: search } },
           // Match on any associated keyword
           {
             keywords: {
-              some: { keyword: { contains: search, mode: "insensitive" } },
+              some: { keyword: { contains: search } },
             },
           },
           // Match on author's first name, last name, or email
           {
             author: {
               OR: [
-                { f_name: { contains: search, mode: "insensitive" } },
-                { l_name: { contains: search, mode: "insensitive" } },
-                { email: { contains: search, mode: "insensitive" } },
+                { f_name: { contains: search } },
+                { l_name: { contains: search } },
+                { email: { contains: search } },
               ],
             },
           },

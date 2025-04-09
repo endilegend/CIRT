@@ -93,6 +93,12 @@ export default function SearchPage() {
                   variant="outline"
                   size="sm"
                   className="bg-white hover:bg-gray-100"
+                  onClick={() => {
+                    setQuery(keyword);
+                    router.push(
+                      `/search/results?search=${encodeURIComponent(keyword)}`
+                    );
+                  }}
                 >
                   {keyword}
                 </Button>
