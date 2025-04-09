@@ -146,7 +146,7 @@ export async function POST(req: Request) {
         const createdArticle = await prisma.article.create({
           data: {
             paper_name,
-            pdf_path: newPath,
+            pdf_path: `/pdfs/${fileName}`,
             author_id,
             type: articleType,
             status,

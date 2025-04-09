@@ -81,6 +81,15 @@ export default async function ResultsPage({
                             {result.paper_name}
                           </h3>
                         </Link>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Link
+                            href={`/Articles?page=${result.pdf_path}`}
+                            className="text-sm text-utred hover:text-utred-dark flex items-center"
+                          >
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            View PDF
+                          </Link>
+                        </div>
                         <p className="text-gray-600 mb-4">
                           {result.abstract || "No abstract provided."}
                         </p>
