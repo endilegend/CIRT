@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
 import { getToken } from "next-auth/jwt";
-import { writeFile } from "fs/promises";
+import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 
 const prisma = new PrismaClient();
@@ -33,7 +33,7 @@ export async function POST(
       where: { id: articleId },
     });
 
-    if (!article || article.author_id !== token) {
+    if (!article || article.author_id !== token.sub) {
       return NextResponse.json(
         { error: "Article not found or unauthorized" },
         { status: 404 }
@@ -45,6 +45,17 @@ export async function POST(
         { error: "Article must be in Reviewed status to resubmit" },
         { status: 400 }
       );
+    }
+
+    // Delete the old PDF file if it exists
+    if (article.pdf_path) {
+      try {
+        const oldFilePath = join(process.cwd(), "public", article.pdf_path);
+        await unlink(oldFilePath);
+      } catch (error) {
+        console.error("Error deleting old PDF file:", error);
+        // Continue with the upload even if deletion fails
+      }
     }
 
     // Save the new PDF file

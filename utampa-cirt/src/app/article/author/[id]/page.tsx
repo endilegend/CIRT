@@ -16,20 +16,26 @@ import { Article, Review, Status } from "@prisma/client";
 import { PDFViewer } from "@/components/article/PDFViewer";
 
 type ArticleWithReview = Article & {
-  review?: Review;
+  review?: Review & {
+    reviewer: {
+      f_name: string;
+      l_name: string;
+    };
+  };
 };
 
-export default function AuthorArticlePage({
-  params,
-}: {
-  params: { id: string };
-}) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function AuthorArticlePage({ params }: PageProps) {
   const [article, setArticle] = useState<ArticleWithReview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const router = useRouter();
+  const { id: articleId } = React.use(params);
 
   useEffect(() => {
     const auth = getAuth();
@@ -47,18 +53,18 @@ export default function AuthorArticlePage({
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await fetch(`/api/articles/${params.id}`);
+        const response = await fetch(`/api/articles/${articleId}`);
         if (!response.ok) throw new Error("Failed to fetch article");
         const data = await response.json();
 
         // If article is approved, redirect to regular article view
         if (data.article.status === "Approved") {
-          router.push(`/article/${params.id}`);
+          router.push(`/article/${articleId}`);
           return;
         }
 
         // Fetch review for this article
-        const reviewResponse = await fetch(`/api/reviews/${params.id}/latest`);
+        const reviewResponse = await fetch(`/api/reviews/${articleId}/latest`);
         if (reviewResponse.ok) {
           const reviewData = await reviewResponse.json();
           data.article.review = reviewData.review;
@@ -73,10 +79,10 @@ export default function AuthorArticlePage({
       }
     };
 
-    if (params.id) {
+    if (articleId) {
       fetchArticle();
     }
-  }, [params.id, router]);
+  }, [articleId, router]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -149,8 +155,17 @@ export default function AuthorArticlePage({
                   Reviewer Comments
                 </h3>
                 {article.review ? (
-                  <div className="bg-gray-50 p-4 rounded-lg border">
-                    {article.review.comments}
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg border">
+                      <div className="font-medium mb-2">
+                        Reviewer: {article.review.reviewer.f_name}{" "}
+                        {article.review.reviewer.l_name}
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        Status: {article.status?.replace("_", " ")}
+                      </div>
+                      <div className="mt-2">{article.review.comments}</div>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-gray-500">No reviewer comments yet.</p>

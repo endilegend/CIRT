@@ -17,13 +17,16 @@ export async function GET(
       );
     }
 
-    // Get the latest review for this article
+    // Get the latest review for this article with reviewer information
     const review = await prisma.review.findFirst({
       where: {
         article_id: articleId,
       },
+      include: {
+        reviewer: true,
+      },
       orderBy: {
-        review_date: "desc",
+        review_ID: "desc",
       },
     });
 
