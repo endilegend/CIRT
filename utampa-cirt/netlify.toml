@@ -1,9 +1,12 @@
 [build]
-  command = "bun run build"
+  base = "utampa-cirt"
+  command = "npx prisma generate && npm run build"
   publish = "build"
 
 [build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  NEXT_PUBLIC_BASE_URL = "https://cirtdb.netlify.app"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NODE_VERSION = "18"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
