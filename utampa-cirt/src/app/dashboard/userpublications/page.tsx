@@ -134,7 +134,13 @@ export default function UserPublicationsPage() {
                           </TableCell>
                           <TableCell>
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/article/${publication.id}`}>
+                              <Link
+                                href={
+                                  publication.status === "Approved"
+                                    ? `/article/${publication.id}`
+                                    : `/article/author/${publication.id}`
+                                }
+                              >
                                 View
                               </Link>
                             </Button>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Status } from "@prisma/client";
 import { getToken } from "next-auth/jwt";
 import { writeFile } from "fs/promises";
 import { join } from "path";
@@ -16,23 +16,24 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const articleId = parseInt(params.id);
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const authorId = formData.get("authorId") as string;
+    const status = formData.get("status") as Status;
 
-    if (!file || !authorId) {
+    if (!file || !status) {
       return NextResponse.json(
-        { error: "File and author ID are required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
     // Verify the article belongs to the author
     const article = await prisma.article.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: articleId },
     });
 
-    if (!article || article.author_id !== authorId) {
+    if (!article || article.author_id !== token) {
       return NextResponse.json(
         { error: "Article not found or unauthorized" },
         { status: 404 }
@@ -46,25 +47,33 @@ export async function POST(
       );
     }
 
-    // Save the file
+    // Save the new PDF file
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const fileName = `${Date.now()}-${file.name}`;
-    const path = join(process.cwd(), "public/uploads", fileName);
-    await writeFile(path, buffer);
 
-    // Update the article
+    // Create a unique filename using timestamp
+    const timestamp = Date.now();
+    const filename = `${articleId}_${timestamp}.pdf`;
+    const uploadDir = join(process.cwd(), "public/pdfs");
+    const filepath = join(uploadDir, filename);
+
+    await writeFile(filepath, buffer);
+    const pdf_path = `/pdfs/${filename}`;
+
+    // Update the article with new PDF and status
     const updatedArticle = await prisma.article.update({
-      where: { id: parseInt(params.id) },
+      where: {
+        id: articleId,
+      },
       data: {
-        pdf_path: `/uploads/${fileName}`,
-        status: "Under_Review",
+        pdf_path: pdf_path,
+        status: status,
       },
     });
 
     return NextResponse.json({ article: updatedArticle });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error resubmitting article:", error);
     return NextResponse.json(
       { error: "Failed to resubmit article" },
       { status: 500 }
