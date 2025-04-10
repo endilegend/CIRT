@@ -306,14 +306,19 @@ export default function DashboardPage() {
                 <BookOpen className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl text-white font-bold">An Ester Egg</div>
+                <div className="text-3xl text-white font-bold">
+                  An Ester Egg
+                </div>
                 <p className="text-sm text-gray-600">
                   Review paper, article, and poster submissions
                 </p>
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/review">
-                  <Button variant="ghost" className="text-utred hover:text-utred-dark">
+                  <Button
+                    variant="ghost"
+                    className="text-utred hover:text-utred-dark"
+                  >
                     View Submissions
                   </Button>
                 </Link>
@@ -328,17 +333,18 @@ export default function DashboardPage() {
                 <AreaChart className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold"><br></br></div>
+                <div className="text-3xl font-bold">
+                  <br></br>
+                </div>
                 <p className="text-sm text-gray-600">
                   View and edit assigned paper, article, and poster submissions
                 </p>
-
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/editor">
                   <Button
-                      variant="ghost"
-                      className="text-utred hover:text-utred-dark"
+                    variant="ghost"
+                    className="text-utred hover:text-utred-dark"
                   >
                     View Submissions
                   </Button>

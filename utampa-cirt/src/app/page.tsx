@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { initializeApp } from "firebase/app";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,34 +12,45 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+import { Article, User, Keyword } from "@prisma/client";
 
-// Firebase configuration object (use the same config for your project)
-const firebaseConfig = {
-  apiKey: "AIzaSyCj7ll6PomPGDKNx981w6HJu3IB97inDKY",
-  authDomain: "cirt-9d13f.firebaseapp.com",
-  databaseURL: "https://cirt-9d13f-default-rtdb.firebaseio.com",
-  projectId: "cirt-9d13f",
-  storageBucket: "cirt-9d13f.firebasestorage.app",
-  messagingSenderId: "934697913147",
-  appId: "1:934697913147:web:b07dce427e2dc31204c51e",
-  measurementId: "G-XYDPTRCE75",
+type ArticleWithRelations = Article & {
+  author: User | null;
+  keywords: Keyword[];
 };
-
-// Initialize Firebase app and auth
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
 export default function HomePage() {
   // Track auth state so we can conditionally show buttons
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
     });
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestArticles = async () => {
+      try {
+        const response = await fetch("/api/articles/latest");
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setArticles(data.articles || []);
+      } catch (error) {
+        console.error("Error fetching latest articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestArticles();
   }, []);
 
   return (
@@ -174,32 +185,55 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentArticles.map((article) => (
-              <Card
-                key={article.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader>
-                  <CardTitle className="text-lg">{article.title}</CardTitle>
-                  <CardDescription>
-                    <span className="text-utred">{article.type}</span> •{" "}
-                    {article.date}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {article.excerpt}
-                  </p>
-                  <div className="flex items-center">
-                    <div className="text-sm">
-                      <p className="font-medium">{article.author}</p>
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <p>Loading articles...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article) => (
+                <Card
+                  key={article.id}
+                  className="hover:shadow-md transition-shadow"
+                >
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {article.paper_name}
+                    </CardTitle>
+                    <CardDescription>
+                      <span className="text-utred">
+                        {article.type || "Article"}
+                      </span>{" "}
+                      • {new Date(article.createdAt).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center">
+                      <div className="text-sm">
+                        <p className="font-medium">
+                          {article.author
+                            ? `${article.author.f_name} ${article.author.l_name}`
+                            : "Unknown Author"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    {article.keywords && article.keywords.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {article.keywords.map((keyword) => (
+                          <span
+                            key={keyword.id}
+                            className="bg-utred/10 text-utred px-2 py-1 rounded-full text-xs"
+                          >
+                            {keyword.keyword}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -239,34 +273,3 @@ export default function HomePage() {
     </MainLayout>
   );
 }
-
-// Sample data for recent articles
-const recentArticles = [
-  {
-    id: 1,
-    title: "The Impact of Community Policing on Urban Crime Rates",
-    type: "Article",
-    date: "March 10, 2025",
-    excerpt:
-      "This study examines the effectiveness of community policing strategies in major metropolitan areas over a five-year period.",
-    author: "Dr. Sarah Johnson",
-  },
-  {
-    id: 2,
-    title: "Digital Forensics in Modern Criminal Investigations",
-    type: "Journal",
-    date: "February 28, 2025",
-    excerpt:
-      "An analysis of how digital forensic techniques have evolved and their application in solving complex cases.",
-    author: "Prof. Michael Rodriguez",
-  },
-  {
-    id: 3,
-    title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
-    type: "Paper",
-    date: "February 15, 2025",
-    excerpt:
-      "This paper compares the effectiveness of various prevention programs targeting at-risk youth across different socioeconomic backgrounds.",
-    author: "Dr. Emily Chen",
-  },
-];

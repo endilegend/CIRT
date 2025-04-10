@@ -4,41 +4,83 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
-  // Parse the search query parameter from the URL (e.g., ?search=foo)
-  const { search = "" } = Object.fromEntries(
-    new URL(req.url).searchParams.entries()
-  );
-
   try {
-    const articles = await prisma.article.findMany({
+    const { searchParams } = new URL(req.url);
+    const searchQuery = searchParams.get("search") || "";
+
+    if (!searchQuery.trim()) {
+      return NextResponse.json({ results: [] });
+    }
+
+    // Split the search query into individual terms
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/);
+
+    const results = await prisma.article.findMany({
       where: {
         OR: [
-          // Match on paper_name
-          { paper_name: { contains: search } },
-          // Match on any associated keyword
+          // Search in article title
           {
-            keywords: {
-              some: { keyword: { contains: search } },
+            paper_name: {
+              contains: searchQuery,
+              mode: "insensitive",
             },
           },
-          // Match on author's first name, last name, or email
+          // Search in author names
           {
             author: {
               OR: [
-                { f_name: { contains: search } },
-                { l_name: { contains: search } },
-                { email: { contains: search } },
+                {
+                  f_name: {
+                    contains: searchQuery,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  l_name: {
+                    contains: searchQuery,
+                    mode: "insensitive",
+                  },
+                },
+                // Search for full name
+                {
+                  AND: searchTerms.map((term) => ({
+                    OR: [
+                      { f_name: { contains: term, mode: "insensitive" } },
+                      { l_name: { contains: term, mode: "insensitive" } },
+                    ],
+                  })),
+                },
               ],
+            },
+          },
+          // Search in keywords
+          {
+            keywords: {
+              some: {
+                keyword: {
+                  contains: searchQuery,
+                  mode: "insensitive",
+                },
+              },
             },
           },
         ],
       },
-      include: { keywords: true, author: true },
+      include: {
+        author: true,
+        keywords: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    return NextResponse.json({ results: articles });
+    return NextResponse.json({ results });
   } catch (error) {
     console.error("Search error:", error);
-    return NextResponse.json({ error: "Search error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error performing search" },
+      { status: 500 }
+    );
   }
 }

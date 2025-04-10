@@ -3,18 +3,19 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // Change to "postgresql" if using PostgreSQL
-  url      = "mysql://root:root@localhost:3306/CIRT"
+  provider = "postgresql" 
+  url      = "postgresql://postgres:Cirt123@db.thpwxsppkxnigxysuvpb.supabase.co:5432/postgres"
 }
 
 model User {
-  id       String   @id @unique
-  f_name   String   @db.VarChar(50)
-  l_name   String   @db.VarChar(50)
-  email    String   @unique @db.VarChar(100)
-  user_role Role    @default(Author)
+  id        String    @id @unique
+  f_name    String    @db.VarChar(50)
+  l_name    String    @db.VarChar(50)
+  email     String    @unique @db.VarChar(100)
+  user_role Role      @default(Author)
 
-  articles Article[]
+  articles  Article[]
+  reviews   Review[]  @relation("UserReviews")
 }
 
 model Article {
@@ -28,8 +29,8 @@ model Article {
 
   author     User?     @relation(fields: [author_id], references: [id])
   keywords   Keyword[]
+  reviews    Review[]  @relation("ArticleReviews")
 }
-
 
 model Keyword {
   id         Int      @id @default(autoincrement())
@@ -37,6 +38,15 @@ model Keyword {
   keyword    String   @db.VarChar(50)
 
   article    Article? @relation(fields: [article_id], references: [id])
+}
+
+model Review {
+  review_ID   Int     @id @default(autoincrement())
+  article_id  Int
+  reviewerId  String
+
+  article     Article @relation("ArticleReviews", fields: [article_id], references: [id])
+  reviewer    User    @relation("UserReviews", fields: [reviewerId], references: [id])
 }
 
 enum Role {

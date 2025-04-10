@@ -65,6 +65,8 @@ export default function AboutPage() {
                 alt="University of Tampa Plant Hall"
                 fill
                 className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
           </div>
@@ -207,6 +209,7 @@ export default function AboutPage() {
                     alt={member.name}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 </div>
                 <CardHeader className="bg-white">
@@ -317,21 +320,21 @@ const facultyMembers = [
     id: 1,
     name: "Dr. Umar Johnson",
     title: "Director, CIRT",
-    image: "/images/umar.jpg",
+    image: "/images/ut-logo.png",
     bio: "Dr. Reynolds specializes in criminal justice policy and has over 20 years of experience in criminology research. She leads the institute's strategic initiatives and research programs.",
   },
   {
     id: 2,
     name: "Dr. James Wilson",
     title: "Research Director",
-    image: "/images/cool.jpg",
+    image: "/images/ut-logo.png",
     bio: "With expertise in quantitative criminology and statistical analysis, Dr. Wilson oversees the research methodology and data analysis components of CIRT's projects.",
   },
   {
     id: 3,
     name: "Dr. LeBron Raymone James",
     title: "GOAT",
-    image: "/images/lebron.jpg",
+    image: "/images/ut-logo.png",
     bio: "This man is the greatest human of all time. He quite literally has it all. Handsome ✅ Athletic ✅ Smart ✅ Tall ✅ Rich ✅ Great Father ✅ Singer ✅",
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookOpen, Calendar, Download, Users } from "lucide-react";
 import Link from "next/link";
+import { Article, User, Keyword } from "@prisma/client";
+
+type ArticleWithRelations = Article & {
+  author: User | null;
+  keywords: Keyword[];
+};
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchLatestArticles = async () => {
+      try {
+        const response = await fetch("/api/articles/latest");
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setArticles(data.articles || []);
+      } catch (error) {
+        console.error("Error fetching latest articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestArticles();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,83 +136,82 @@ export default function SearchPage() {
           {/* Search Results */}
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Search Results</h2>
+              <h2 className="text-xl font-semibold">Latest Articles</h2>
               <div className="text-sm text-gray-600">
-                Showing {searchResults.length} of 324 results
+                Showing {articles.length} articles
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 mb-8">
-              {searchResults.map((result) => (
-                <Card key={result.id} className="overflow-hidden">
-                  <div className="flex flex-col md:flex-row">
-                    <div className="flex-grow p-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
-                          {result.type}
-                        </span>
-                        <span className="text-sm text-gray-500 flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" /> {result.date}
-                        </span>
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <p>Loading articles...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 mb-8">
+                {articles.map((article) => (
+                  <Card key={article.id} className="overflow-hidden">
+                    <div className="flex flex-col md:flex-row">
+                      <div className="flex-grow p-6">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
+                            {article.type || "Article"}
+                          </span>
+                          <span className="text-sm text-gray-500 flex items-center">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {new Date(article.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <Link href={`/article/${article.id}`} className="group">
+                          <h3 className="text-xl font-semibold mb-2 group-hover:text-utred transition-colors">
+                            {article.paper_name}
+                          </h3>
+                        </Link>
+
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                          <div className="flex items-center text-gray-500">
+                            <Users className="h-4 w-4 mr-1" />
+                            <span>
+                              {article.author
+                                ? `${article.author.f_name} ${article.author.l_name}`
+                                : "Unknown Author"}
+                            </span>
+                          </div>
+                          <div className="flex items-center text-gray-500">
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            <span>{article.type || "Article"}</span>
+                          </div>
+                        </div>
+
+                        {article.keywords && article.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {article.keywords.map((keyword) => (
+                              <span
+                                key={keyword.id}
+                                className="bg-utred/10 text-utred px-3 py-1 rounded-full text-sm"
+                              >
+                                {keyword.keyword}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      <Link href={`/article/${result.id}`} className="group">
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-utred transition-colors">
-                          {result.title}
-                        </h3>
-                      </Link>
-
-                      <p className="text-gray-600 mb-4">{result.abstract}</p>
-
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                        <div className="flex items-center text-gray-500">
-                          <Users className="h-4 w-4 mr-1" />
-                          <span>{result.authors.join(", ")}</span>
+                      <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:w-48">
+                        <div className="text-center mb-4">
+                          <div className="text-2xl font-bold">0</div>
+                          <div className="text-sm text-gray-500">Views</div>
                         </div>
-                        <div className="flex items-center text-gray-500">
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          <span>{result.citations} Citations</span>
-                        </div>
+                        <Button className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark">
+                          <Download className="h-4 w-4" />
+                          PDF
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:w-48">
-                      <div className="text-center mb-4">
-                        <div className="text-2xl font-bold">{result.views}</div>
-                        <div className="text-sm text-gray-500">Views</div>
-                      </div>
-                      <Button className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark">
-                        <Download className="h-4 w-4" />
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex justify-center gap-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-utred text-white hover:bg-utred-dark"
-              >
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                3
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-              </Button>
-            </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -193,7 +219,7 @@ export default function SearchPage() {
   );
 }
 
-// Sample data
+// Sample data for popular keywords
 const popularKeywords = [
   "Criminal Justice",
   "Policing",
@@ -205,51 +231,4 @@ const popularKeywords = [
   "Crime Prevention",
   "Forensics",
   "Rehabilitation",
-];
-
-const searchResults = [
-  {
-    id: 1,
-    title: "The Impact of Community Policing on Urban Crime Rates",
-    type: "Article",
-    date: "March 10, 2025",
-    abstract:
-      "This study examines the effectiveness of community policing strategies in major metropolitan areas over a five-year period. Results indicate that community engagement significantly reduces violent crime rates when implemented consistently.",
-    authors: ["Dr. Sarah Johnson", "Prof. Michael Chen"],
-    citations: 12,
-    views: 247,
-  },
-  {
-    id: 2,
-    title: "Digital Forensics in Modern Criminal Investigations",
-    type: "Journal",
-    date: "February 28, 2025",
-    abstract:
-      "An analysis of how digital forensic techniques have evolved and their application in solving complex cases. This research explores modern methodologies and their effectiveness compared to traditional investigative approaches.",
-    authors: ["Prof. Michael Rodriguez", "Dr. Lisa Wang"],
-    citations: 8,
-    views: 183,
-  },
-  {
-    id: 3,
-    title: "Juvenile Delinquency Prevention Programs: A Comparative Study",
-    type: "Paper",
-    date: "February 15, 2025",
-    abstract:
-      "This paper compares the effectiveness of various prevention programs targeting at-risk youth across different socioeconomic backgrounds. Our findings suggest that early intervention produces the most significant long-term positive outcomes.",
-    authors: ["Dr. Emily Chen", "Prof. David Williams"],
-    citations: 5,
-    views: 129,
-  },
-  {
-    id: 4,
-    title: "The Evolution of Corrections Facilities: Design and Rehabilitation",
-    type: "Article",
-    date: "January 22, 2025",
-    abstract:
-      "An examination of how correctional facility design has evolved to support rehabilitation goals. This study analyzes architectural trends and their impact on inmate behavior and recidivism rates.",
-    authors: ["Dr. James Peterson", "Dr. Maria Gonzalez"],
-    citations: 15,
-    views: 342,
-  },
 ];

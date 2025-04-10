@@ -1,39 +1,73 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Calendar, Users } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { PrismaClient } from "@prisma/client";
+import { Article, User, Keyword } from "@prisma/client";
+import { SpartyChat } from "@/components/SpartyChat";
 
-const prisma = new PrismaClient();
+type ArticleWithRelations = Article & {
+  author: User | null;
+  keywords: Keyword[];
+};
 
-export default async function ArticlePage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const article = await prisma.article.findUnique({
-    where: { id: parseInt(params.id) },
-    include: { author: true, keywords: true },
-  });
+export default function ArticlePage() {
+  const params = useParams();
+  const [article, setArticle] = useState<ArticleWithRelations | null>(null);
+  const [pdfContent, setPdfContent] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        // Fetch article data
+        const articleResponse = await fetch(`/api/articles/${params.id}`);
+        if (!articleResponse.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const articleData = await articleResponse.json();
+        setArticle(articleData);
+
+        // Fetch PDF content
+        const pdfResponse = await fetch(`/api/articles/${params.id}/pdf`);
+        if (!pdfResponse.ok) {
+          throw new Error("Failed to fetch PDF content");
+        }
+        const pdfData = await pdfResponse.json();
+        setPdfContent(pdfData.content);
+      } catch (error) {
+        console.error("Error fetching article:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <MainLayout isAuthenticated={true}>
+        <div className="bg-slate-50 py-8 min-h-screen">
+          <div className="ut-container">
+            <div className="flex justify-center items-center h-32">
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!article) {
     return (
       <MainLayout isAuthenticated={true}>
         <div className="bg-slate-50 py-8 min-h-screen">
           <div className="ut-container">
-            <Card>
-              <CardHeader>
-                <CardTitle>Article Not Found</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>The requested article could not be found.</p>
-              </CardContent>
-            </Card>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
+              <p>The requested article could not be found.</p>
+            </div>
           </div>
         </div>
       </MainLayout>
@@ -44,43 +78,24 @@ export default async function ArticlePage({
     <MainLayout isAuthenticated={true}>
       <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">{article.paper_name}</CardTitle>
-              <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center text-gray-500">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  {new Date(article.createdAt).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-gray-500">
-                  <Users className="h-4 w-4 mr-1" />
-                  {article.author
-                    ? `${article.author.f_name} ${article.author.l_name}`
-                    : "Unknown Author"}
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* PDF Viewer */}
+            <div className="lg:col-span-3">
+              <iframe
+                src={article.pdf_path}
+                width="100%"
+                height="800px"
+                className="rounded-lg border"
+              />
+            </div>
+
+            {/* Sparty Chat */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8">
+                <SpartyChat articleContent={pdfContent} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {article.keywords.map((keyword) => (
-                  <span
-                    key={keyword.id}
-                    className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full"
-                  >
-                    {keyword.keyword}
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-4 mb-6">
-                <Link href={`/Articles?page=${article.pdf_path}`}>
-                  <Button className="bg-utred hover:bg-utred-dark">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    View PDF
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </MainLayout>
