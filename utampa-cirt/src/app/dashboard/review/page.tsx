@@ -142,7 +142,7 @@ export default function ReviewPage() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Link href={`/article/${article.id}`}>
+                            <Link href={`/review/${article.id}`}>
                               <Button className="hover:text-utred" size="sm">
                                 Review
                               </Button>

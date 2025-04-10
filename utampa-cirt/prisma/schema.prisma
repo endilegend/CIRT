@@ -44,6 +44,7 @@ model Review {
   review_ID   Int     @id @default(autoincrement())
   article_id  Int
   reviewerId  String
+  comments    String? @db.Text
 
   article     Article @relation("ArticleReviews", fields: [article_id], references: [id])
   reviewer    User    @relation("UserReviews", fields: [reviewerId], references: [id])
@@ -60,6 +61,7 @@ enum Status {
   Under_Review
   Approved
   Declined
+  Reviewed
 }
 
 enum ArticleType {

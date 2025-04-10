@@ -21,6 +21,11 @@ export async function GET(
     const reviews = await prisma.review.findMany({
       where: {
         reviewerId: userId,
+        article: {
+          status: {
+            not: "Approved",
+          },
+        },
       },
       include: {
         article: {

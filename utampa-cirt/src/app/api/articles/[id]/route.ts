@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const article = await prisma.article.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       include: { author: true, keywords: true },
     });
 
@@ -17,11 +18,11 @@ export async function GET(
       return NextResponse.json({ error: "Article not found" }, { status: 404 });
     }
 
-    return NextResponse.json(article);
+    return NextResponse.json({ article });
   } catch (error) {
     console.error("Error fetching article:", error);
     return NextResponse.json(
-      { error: "Error fetching article" },
+      { error: "Failed to fetch article" },
       { status: 500 }
     );
   }

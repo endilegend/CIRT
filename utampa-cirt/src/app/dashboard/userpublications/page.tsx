@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,146 +19,125 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { Article } from "@prisma/client";
+import Link from "next/link";
+import { Article, Status } from "@prisma/client";
 
-function getStatusClass(status: string) {
+const getStatusColor = (status: Status | null) => {
   switch (status) {
-    case "Approved":
-      return "px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full";
-    case "Under Review":
-      return "px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full";
     case "Sent":
-      return "px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full";
+      return "bg-blue-200 text-blue-800";
+    case "Under_Review":
+      return "bg-yellow-200 text-yellow-800";
+    case "Reviewed":
+      return "bg-orange-200 text-orange-800";
     case "Declined":
-      return "px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full";
+      return "bg-red-200 text-red-800";
+    case "Approved":
+      return "bg-green-200 text-green-800";
     default:
-      return "px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full";
+      return "bg-gray-200 text-gray-800";
   }
-}
+};
 
 export default function UserPublicationsPage() {
-  const [userPublications, setUserPublications] = useState<Article[]>([]);
+  const [publications, setPublications] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  const fetchUserPublications = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/user/publications?userId=${userId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch publications");
-      }
-
-      const data = await response.json();
-      setUserPublications(data.publications);
-      setError(null);
-    } catch (error) {
-      console.error("Error fetching publications:", error);
-      setError("Failed to load publications");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const auth = getAuth();
-
-    // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthChecked(true);
-
       if (user) {
-        fetchUserPublications(user.uid);
+        setUserId(user.uid);
       } else {
-        setError("User not authenticated");
-        setLoading(false);
+        setUserId(null);
       }
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
   }, []);
 
-  // Show loading state while checking auth
-  if (!authChecked) {
-    return (
-      <MainLayout isAuthenticated={true}>
-        <div className="bg-slate-50 min-h-screen py-8">
-          <div className="ut-container">
-            <div className="flex justify-center items-center h-32">
-              <p>Loading...</p>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
+  useEffect(() => {
+    const fetchPublications = async () => {
+      if (!userId) return;
+
+      try {
+        const response = await fetch(`/api/user/publications?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch publications");
+        }
+        const data = await response.json();
+        setPublications(data.publications);
+      } catch (error) {
+        console.error("Error:", error);
+        setError(error instanceof Error ? error.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchPublications();
+    }
+  }, [userId]);
 
   return (
-    <MainLayout isAuthenticated={true}>
+    <MainLayout isAuthenticated={!!userId}>
       <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">My Publications</h1>
-            <p className="text-gray-600">View and manage your publications</p>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>My Publications</CardTitle>
-              <CardDescription className="text-right font-bold text-gray-700">
-                Number of publications: {userPublications.length}
+              <CardDescription>
+                View and manage your submitted articles
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-4">Loading publications...</div>
+                <div className="text-center py-4">Loading...</div>
               ) : error ? (
                 <div className="text-center text-red-500 py-4">{error}</div>
-              ) : userPublications.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  No publications found. Use the upload section to add one.
-                </div>
+              ) : publications.length === 0 ? (
+                <div className="text-center py-4">No publications found</div>
               ) : (
-                <div className="scrollable-table">
+                <div className="rounded-md border">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-white z-10">
+                    <TableHeader>
                       <TableRow>
                         <TableHead>Title</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Date Uploaded</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {userPublications.map((publication) => (
+                      {publications.map((publication) => (
                         <TableRow key={publication.id}>
-                          <TableCell className="font-medium">
-                            {publication.paper_name}
-                          </TableCell>
+                          <TableCell>{publication.paper_name}</TableCell>
                           <TableCell>{publication.type}</TableCell>
+                          <TableCell>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                publication.status
+                              )}`}
+                            >
+                              {publication.status?.replace("_", " ") ||
+                                "Unknown"}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             {new Date(
                               publication.createdAt
                             ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <span
-                              className={getStatusClass(
-                                publication.status || "Sent"
-                              )}
-                            >
-                              {publication.status || "Sent"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Link href={`/article/${publication.id}`}>
-                              <Button className="hover:text-utred" size="sm">
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/article/${publication.id}`}>
                                 View
-                              </Button>
-                            </Link>
+                              </Link>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
