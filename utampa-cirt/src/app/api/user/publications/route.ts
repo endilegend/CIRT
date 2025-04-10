@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch the user's recent publications
+    // Fetch all user publications
     const publications = await prisma.article.findMany({
       where: {
         author_id: userId,
@@ -27,7 +27,6 @@ export async function GET(request: Request) {
       orderBy: {
         createdAt: "desc",
       },
-      take: 5, // Limit to 5 most recent publications
     });
 
     return NextResponse.json({ publications });

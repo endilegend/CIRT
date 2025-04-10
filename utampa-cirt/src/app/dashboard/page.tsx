@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword } from "@prisma/client";
 
 // -----------------------------------------------------------------------------
@@ -260,47 +260,80 @@ export default function DashboardPage() {
   const [userPublications, setUserPublications] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [publicationsCount, setPublicationsCount] = useState(0);
+  const [totalApprovedCount, setTotalApprovedCount] = useState(0);
+
+  const fetchTotalApprovedCount = async () => {
+    try {
+      const response = await fetch("/api/publications/count");
+      if (!response.ok) {
+        throw new Error("Failed to fetch total count");
+      }
+      const data = await response.json();
+      setTotalApprovedCount(data.count);
+    } catch (error) {
+      console.error("Error fetching total count:", error);
+    }
+  };
+
+  const fetchUserPublications = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/user/publications?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch publications");
+      }
+
+      const data = await response.json();
+      setUserPublications(data.publications);
+      setPublicationsCount(data.publications.length);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching publications:", error);
+      setError("Failed to load publications");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUserPublications = async () => {
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
+    const auth = getAuth();
 
-        if (!user) {
-          setError("User not authenticated");
-          setLoading(false);
-          return;
-        }
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthChecked(true);
 
-        const response = await fetch(
-          `/api/user/publications?userId=${user.uid}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch publications");
-        }
-
-        const data = await response.json();
-        setUserPublications(data.publications);
-      } catch (error) {
-        console.error("Error fetching publications:", error);
-        setError("Failed to load publications");
-      } finally {
+      if (user) {
+        fetchUserPublications(user.uid);
+        fetchTotalApprovedCount();
+      } else {
+        setError("User not authenticated");
         setLoading(false);
       }
-    };
+    });
 
-    fetchUserPublications();
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    setIsUploadDialogOpen(true);
-  };
+  // Show loading state while checking auth
+  if (!authChecked) {
+    return (
+      <MainLayout isAuthenticated={true}>
+        <div className="bg-slate-50 min-h-screen py-8">
+          <div className="ut-container">
+            <div className="flex justify-center items-center h-32">
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout isAuthenticated={true}>
-      <div className="bg-slate-50 min-h-screen py-8">
+      <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
           {/* Page Header */}
           <div className="mb-8">
@@ -310,7 +343,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Overview Cards */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -320,7 +353,7 @@ export default function DashboardPage() {
                 <BookOpen className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">3</div>
+                <div className="text-3xl font-bold">{publicationsCount}</div>
                 <p className="text-sm text-gray-600">
                   Total publications in database
                 </p>
@@ -393,18 +426,17 @@ export default function DashboardPage() {
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Database Status
                 </CardTitle>
-                <Search className="h-5 w-5 text-utred" />
+                <Search className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">324</div>
-                <p className="text-sm text-gray-600">
-                  Total publications in system
+                <div className="text-2xl font-bold">{totalApprovedCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total approved publications in system
                 </p>
-                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/search">
@@ -419,6 +451,46 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* Upload Section */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload New Article</CardTitle>
+                <CardDescription>
+                  Upload your latest research to share with the CIRT community
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DragDropFile onFileSelect={(file) => setSelectedFile(file)} />
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <div className="text-sm text-gray-500">
+                  Maximum file size: 10MB
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="bg-utred hover:bg-utred-dark"
+                      disabled={!selectedFile}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Upload Article
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Article Details</DialogTitle>
+                      <DialogDescription>
+                        Provide metadata for your publication
+                      </DialogDescription>
+                    </DialogHeader>
+                    <UploadForm file={selectedFile} />
+                  </DialogContent>
+                </Dialog>
+              </CardFooter>
+            </Card>
+          </div>
+
           {/* Recent Publications */}
           <Card className="mb-8">
             <CardHeader>
@@ -429,31 +501,6 @@ export default function DashboardPage() {
                     View and manage your recent submissions
                   </CardDescription>
                 </div>
-                <Dialog
-                  open={isUploadDialogOpen}
-                  onOpenChange={setIsUploadDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button className="bg-utred hover:bg-utred-dark">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      New Publication
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Upload Publication</DialogTitle>
-                      <DialogDescription>
-                        Upload your research paper, article, or poster in PDF
-                        format.
-                      </DialogDescription>
-                    </DialogHeader>
-                    {selectedFile ? (
-                      <UploadForm file={selectedFile} />
-                    ) : (
-                      <DragDropFile onFileSelect={handleFileSelect} />
-                    )}
-                  </DialogContent>
-                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -463,50 +510,54 @@ export default function DashboardPage() {
                 <div className="text-center text-red-500 py-4">{error}</div>
               ) : userPublications.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">
-                  No publications yet. Click "New Publication" to add one.
+                  No publications yet. Use the upload section above to add one.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {userPublications.map((publication) => (
-                      <TableRow key={publication.id}>
-                        <TableCell className="font-medium">
-                          {publication.paper_name}
-                        </TableCell>
-                        <TableCell>{publication.type}</TableCell>
-                        <TableCell>
-                          {new Date(publication.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={getStatusClass(
-                              publication.status || "Sent"
-                            )}
-                          >
-                            {publication.status || "Sent"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Link
-                            href={`/article/${publication.id}`}
-                            className="text-utred hover:underline"
-                          >
-                            View
-                          </Link>
-                        </TableCell>
+                <div className="scrollable-table">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-white z-10">
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {userPublications.map((publication) => (
+                        <TableRow key={publication.id}>
+                          <TableCell className="font-medium">
+                            {publication.paper_name}
+                          </TableCell>
+                          <TableCell>{publication.type}</TableCell>
+                          <TableCell>
+                            {new Date(
+                              publication.createdAt
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={getStatusClass(
+                                publication.status || "Sent"
+                              )}
+                            >
+                              {publication.status || "Sent"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/article/${publication.id}`}
+                              className="text-utred hover:underline"
+                            >
+                              View
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
