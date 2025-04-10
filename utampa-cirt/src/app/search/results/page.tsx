@@ -21,6 +21,26 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleDownload = async (article: ArticleWithRelations) => {
+    try {
+      const response = await fetch(article.pdf_path);
+      if (!response.ok) throw new Error("Failed to fetch PDF");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${article.paper_name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Failed to download PDF. Please try again.");
+    }
+  };
+
   useEffect(() => {
     const fetchResults = async () => {
       try {
@@ -158,7 +178,10 @@ export default function ResultsPage() {
                           <div className="text-2xl font-bold">0</div>
                           <div className="text-sm text-gray-500">Views</div>
                         </div>
-                        <Button className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark">
+                        <Button
+                          onClick={() => handleDownload(result)}
+                          className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark"
+                        >
                           <Download className="h-4 w-4" />
                           PDF
                         </Button>
