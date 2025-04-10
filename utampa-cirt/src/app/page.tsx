@@ -192,45 +192,51 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.map((article) => (
-                <Card
+                <Link
+                  href={`/article/${article.id}`}
                   key={article.id}
-                  className="hover:shadow-md transition-shadow"
+                  className="block hover:no-underline"
                 >
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {article.paper_name}
-                    </CardTitle>
-                    <CardDescription>
-                      <span className="text-utred">
-                        {article.type || "Article"}
-                      </span>{" "}
-                      • {new Date(article.createdAt).toLocaleDateString()}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center">
-                      <div className="text-sm">
-                        <p className="font-medium">
-                          {article.author
-                            ? `${article.author.f_name} ${article.author.l_name}`
-                            : "Unknown Author"}
-                        </p>
+                  <Card className="hover:shadow-md transition-shadow h-full">
+                    <CardHeader>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
+                          {article.type || "Article"}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(article.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                    </div>
-                    {article.keywords && article.keywords.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {article.keywords.map((keyword) => (
-                          <span
-                            key={keyword.id}
-                            className="bg-utred/10 text-utred px-2 py-1 rounded-full text-xs"
-                          >
-                            {keyword.keyword}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <CardTitle className="text-lg group-hover:text-utred transition-colors">
+                        {article.paper_name}
+                      </CardTitle>
+                      <CardDescription>
+                        {article.author
+                          ? `By ${article.author.f_name} ${article.author.l_name}`
+                          : "Unknown Author"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {article.keywords && article.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {article.keywords.slice(0, 3).map((keyword) => (
+                            <span
+                              key={keyword.id}
+                              className="bg-utred/10 text-utred px-2 py-0.5 rounded-full text-xs"
+                            >
+                              {keyword.keyword}
+                            </span>
+                          ))}
+                          {article.keywords.length > 3 && (
+                            <span className="text-xs text-gray-500">
+                              +{article.keywords.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}
