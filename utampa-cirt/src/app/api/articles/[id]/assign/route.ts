@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const { userId } = await request.json();
-    const articleId = params.id;
+    const articleId = parseInt(params.id);
 
     if (!userId || !articleId) {
       return NextResponse.json(
@@ -18,22 +18,54 @@ export async function POST(
       );
     }
 
-    // Update the article with the assigned editor and change status to "Under Review"
-    const updatedArticle = await prisma.article.update({
-      where: {
-        id: articleId,
-      },
-      data: {
-        status: "Under Review",
-        reviewer_id: userId,
-      },
+    // Check if the user has the appropriate role (Editor or Reviewer)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { user_role: true },
     });
 
-    return NextResponse.json({ article: updatedArticle });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.user_role !== Role.Editor && user.user_role !== Role.Reviewer) {
+      return NextResponse.json(
+        {
+          error:
+            "Only Editors and Reviewers can be assigned to review articles",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Create a review record and update the article status
+    const [review, updatedArticle] = await prisma.$transaction([
+      // Create the review record
+      prisma.review.create({
+        data: {
+          article_id: articleId,
+          reviewerId: userId,
+        },
+      }),
+      // Update the article status
+      prisma.article.update({
+        where: {
+          id: articleId,
+        },
+        data: {
+          status: "Under_Review",
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      article: updatedArticle,
+      review: review,
+    });
   } catch (error) {
-    console.error("Error assigning editor:", error);
+    console.error("Error assigning reviewer:", error);
     return NextResponse.json(
-      { error: "Failed to assign editor" },
+      { error: "Failed to assign reviewer" },
       { status: 500 }
     );
   }

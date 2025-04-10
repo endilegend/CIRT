@@ -39,6 +39,7 @@ type UserSuggestion = {
   f_name: string;
   l_name: string;
   email: string;
+  user_role: Role;
 };
 
 type UserWithRole = {
@@ -69,6 +70,9 @@ export default function EditorPage() {
   const [selectedRoles, setSelectedRoles] = useState<{ [key: string]: string }>(
     {}
   );
+  const [selectedReviewers, setSelectedReviewers] = useState<{
+    [key: string]: string;
+  }>({});
 
   useEffect(() => {
     const fetchSentArticles = async () => {
@@ -118,14 +122,14 @@ export default function EditorPage() {
   };
 
   const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement> | React.MouseEvent,
-    articleId: number,
+    e?: React.FormEvent<HTMLFormElement> | React.MouseEvent,
+    articleId?: number,
     userId?: string
   ) => {
     if (e) {
       e.preventDefault();
     }
-    if (!userId) return;
+    if (!userId || !articleId) return;
 
     try {
       const response = await fetch(`/api/articles/${articleId}/assign`, {
@@ -146,6 +150,12 @@ export default function EditorPage() {
         ...prev,
         [articleId.toString()]: [],
       }));
+      // Clear the selected reviewer after successful submission
+      setSelectedReviewers((prev) => {
+        const updated = { ...prev };
+        delete updated[articleId.toString()];
+        return updated;
+      });
     } catch (error) {
       console.error("Error assigning editor:", error);
       alert("Failed to assign editor. Please try again.");
@@ -292,8 +302,8 @@ export default function EditorPage() {
                               ) : (
                                 <div className="relative">
                                   <Input
-                                    placeholder="Search for users..."
-                                    className="px-1"
+                                    type="text"
+                                    placeholder="Search users..."
                                     value={
                                       editorQueries[article.id.toString()] || ""
                                     }
@@ -303,33 +313,60 @@ export default function EditorPage() {
                                         e.target.value
                                       )
                                     }
+                                    className="w-full"
                                   />
                                   {filteredSuggestions[article.id.toString()]
                                     ?.length > 0 && (
-                                    <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
                                       {filteredSuggestions[
                                         article.id.toString()
                                       ].map((user) => (
-                                        <li
+                                        <div
                                           key={user.id}
-                                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex flex-col"
-                                          onClick={(e) => {
-                                            handleSubmit(
-                                              e,
-                                              article.id,
-                                              user.id
-                                            );
+                                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                          onClick={() => {
+                                            setEditorQueries((prev) => ({
+                                              ...prev,
+                                              [article.id.toString()]: `${user.f_name} ${user.l_name}`,
+                                            }));
+                                            setFilteredSuggestions((prev) => ({
+                                              ...prev,
+                                              [article.id.toString()]: [],
+                                            }));
+                                            // Store the selected user ID instead of submitting immediately
+                                            setSelectedReviewers((prev) => ({
+                                              ...prev,
+                                              [article.id.toString()]: user.id,
+                                            }));
                                           }}
                                         >
-                                          <span className="font-medium">
-                                            {user.f_name} {user.l_name}
-                                          </span>
-                                          <span className="text-sm text-gray-500">
-                                            {user.email}
-                                          </span>
-                                        </li>
+                                          <div>
+                                            <span className="font-medium">
+                                              {user.f_name} {user.l_name}
+                                            </span>
+                                            <span className="text-gray-500 ml-2">
+                                              {user.email}
+                                            </span>
+                                          </div>
+                                        </div>
                                       ))}
-                                    </ul>
+                                    </div>
+                                  )}
+                                  {selectedReviewers[article.id.toString()] && (
+                                    <Button
+                                      onClick={() =>
+                                        handleSubmit(
+                                          undefined,
+                                          article.id,
+                                          selectedReviewers[
+                                            article.id.toString()
+                                          ]
+                                        )
+                                      }
+                                      className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      Submit for Review
+                                    </Button>
                                   )}
                                 </div>
                               )}
