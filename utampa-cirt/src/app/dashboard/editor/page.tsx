@@ -20,8 +20,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { Article, User } from "@prisma/client";
+import { Article, User, Role } from "@prisma/client";
 
 type ArticleWithAuthor = Article & {
   author: User;
@@ -32,6 +39,14 @@ type UserSuggestion = {
   f_name: string;
   l_name: string;
   email: string;
+};
+
+type UserWithRole = {
+  id: string;
+  f_name: string;
+  l_name: string;
+  email: string;
+  user_role: Role;
 };
 
 export default function EditorPage() {
@@ -46,6 +61,14 @@ export default function EditorPage() {
   const [filteredSuggestions, setFilteredSuggestions] = useState<{
     [key: string]: UserSuggestion[];
   }>({});
+  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<{ [key: string]: string }>(
+    {}
+  );
 
   useEffect(() => {
     const fetchSentArticles = async () => {
@@ -68,11 +91,11 @@ export default function EditorPage() {
     fetchSentArticles();
   }, []);
 
-  const handleInputChange = async (id: string, value: string) => {
-    setEditorQueries((prev) => ({ ...prev, [id]: value }));
+  const handleInputChange = async (id: number, value: string) => {
+    setEditorQueries((prev) => ({ ...prev, [id.toString()]: value }));
 
     if (!value.trim()) {
-      setFilteredSuggestions((prev) => ({ ...prev, [id]: [] }));
+      setFilteredSuggestions((prev) => ({ ...prev, [id.toString()]: [] }));
       return;
     }
 
@@ -84,19 +107,24 @@ export default function EditorPage() {
         throw new Error("Failed to fetch users");
       }
       const data = await response.json();
-      setFilteredSuggestions((prev) => ({ ...prev, [id]: data.users }));
+      setFilteredSuggestions((prev) => ({
+        ...prev,
+        [id.toString()]: data.users,
+      }));
     } catch (error) {
       console.error("Error fetching user suggestions:", error);
-      setFilteredSuggestions((prev) => ({ ...prev, [id]: [] }));
+      setFilteredSuggestions((prev) => ({ ...prev, [id.toString()]: [] }));
     }
   };
 
   const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-    articleId: string,
+    e: React.FormEvent<HTMLFormElement> | React.MouseEvent,
+    articleId: number,
     userId?: string
   ) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     if (!userId) return;
 
     try {
@@ -112,14 +140,90 @@ export default function EditorPage() {
         throw new Error("Failed to assign editor");
       }
 
-      setSubmitted((prev) => ({ ...prev, [articleId]: true }));
-      setEditorQueries((prev) => ({ ...prev, [articleId]: "" }));
-      setFilteredSuggestions((prev) => ({ ...prev, [articleId]: [] }));
+      setSubmitted((prev) => ({ ...prev, [articleId.toString()]: true }));
+      setEditorQueries((prev) => ({ ...prev, [articleId.toString()]: "" }));
+      setFilteredSuggestions((prev) => ({
+        ...prev,
+        [articleId.toString()]: [],
+      }));
     } catch (error) {
       console.error("Error assigning editor:", error);
       alert("Failed to assign editor. Please try again.");
     }
   };
+
+  const fetchUsers = async (page: number, query: string = "") => {
+    setLoadingUsers(true);
+    try {
+      const response = await fetch(
+        `/api/users/list?page=${page.toString()}&query=${encodeURIComponent(
+          query
+        )}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const data = await response.json();
+      setUsers(data.users as UserWithRole[]);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleUserSearch = (value: string) => {
+    setUserSearchQuery(value);
+    setCurrentPage(1);
+    fetchUsers(1, value);
+  };
+
+  const handleRoleSelect = (userId: string, role: string) => {
+    setSelectedRoles((prev) => ({ ...prev, [userId]: role }));
+  };
+
+  const handleRoleSubmit = async (userId: string) => {
+    const newRole = selectedRoles[userId];
+    if (!newRole) return;
+
+    try {
+      const response = await fetch(`/api/users/${userId}/update-role`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_role: newRole }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update role");
+      }
+
+      // Refresh the users list
+      fetchUsers(currentPage, userSearchQuery);
+      // Clear the selected role for this user
+      setSelectedRoles((prev) => {
+        const updated = { ...prev };
+        delete updated[userId];
+        return updated;
+      });
+    } catch (error) {
+      console.error("Error updating role:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to update user role. Please try again."
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers(1);
+  }, []);
 
   return (
     <MainLayout isAuthenticated={true}>
@@ -181,7 +285,7 @@ export default function EditorPage() {
                               {article.author.f_name} {article.author.l_name}
                             </TableCell>
                             <TableCell className="relative">
-                              {submitted[article.id] ? (
+                              {submitted[article.id.toString()] ? (
                                 <span className="font-semibold text-green-600">
                                   Assigned
                                 </span>
@@ -190,7 +294,9 @@ export default function EditorPage() {
                                   <Input
                                     placeholder="Search for users..."
                                     className="px-1"
-                                    value={editorQueries[article.id] || ""}
+                                    value={
+                                      editorQueries[article.id.toString()] || ""
+                                    }
                                     onChange={(e) =>
                                       handleInputChange(
                                         article.id,
@@ -198,31 +304,31 @@ export default function EditorPage() {
                                       )
                                     }
                                   />
-                                  {filteredSuggestions[article.id]?.length >
-                                    0 && (
+                                  {filteredSuggestions[article.id.toString()]
+                                    ?.length > 0 && (
                                     <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
-                                      {filteredSuggestions[article.id].map(
-                                        (user) => (
-                                          <li
-                                            key={user.id}
-                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex flex-col"
-                                            onClick={() => {
-                                              handleSubmit(
-                                                new Event("submit") as any,
-                                                article.id,
-                                                user.id
-                                              );
-                                            }}
-                                          >
-                                            <span className="font-medium">
-                                              {user.f_name} {user.l_name}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                              {user.email}
-                                            </span>
-                                          </li>
-                                        )
-                                      )}
+                                      {filteredSuggestions[
+                                        article.id.toString()
+                                      ].map((user) => (
+                                        <li
+                                          key={user.id}
+                                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex flex-col"
+                                          onClick={(e) => {
+                                            handleSubmit(
+                                              e,
+                                              article.id,
+                                              user.id
+                                            );
+                                          }}
+                                        >
+                                          <span className="font-medium">
+                                            {user.f_name} {user.l_name}
+                                          </span>
+                                          <span className="text-sm text-gray-500">
+                                            {user.email}
+                                          </span>
+                                        </li>
+                                      ))}
                                     </ul>
                                   )}
                                 </div>
@@ -239,6 +345,123 @@ export default function EditorPage() {
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Edit Users Card */}
+          <div className="mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Users</CardTitle>
+                <CardDescription>
+                  Manage user roles and permissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Search users by name or email..."
+                    value={userSearchQuery}
+                    onChange={(e) => handleUserSearch(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+
+                {loadingUsers ? (
+                  <div className="text-center py-4">Loading users...</div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    No users found.
+                  </div>
+                ) : (
+                  <div className="scrollable-table">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Current Role</TableHead>
+                          <TableHead>Change Role</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              {user.f_name} {user.l_name}
+                            </TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.user_role}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={
+                                    selectedRoles[user.id] || user.user_role
+                                  }
+                                  onValueChange={(value) =>
+                                    handleRoleSelect(user.id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Select a role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Author">
+                                      Author
+                                    </SelectItem>
+                                    <SelectItem value="Reviewer">
+                                      Reviewer
+                                    </SelectItem>
+                                    <SelectItem value="Editor">
+                                      Editor
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {selectedRoles[user.id] &&
+                                  selectedRoles[user.id] !== user.user_role && (
+                                    <Button
+                                      onClick={() => handleRoleSubmit(user.id)}
+                                      className="bg-red-600 hover:bg-red-700 text-white"
+                                    >
+                                      Enter Changes
+                                    </Button>
+                                  )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        fetchUsers(currentPage - 1, userSearchQuery)
+                      }
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="py-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        fetchUsers(currentPage + 1, userSearchQuery)
+                      }
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
                   </div>
                 )}
               </CardContent>

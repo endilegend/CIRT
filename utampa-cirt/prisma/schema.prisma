@@ -52,7 +52,7 @@ model Review {
 enum Role {
   Reviewer
   Author
-  Viewer
+  Editor
 }
 
 enum Status {
