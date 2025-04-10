@@ -108,6 +108,7 @@ export function ReviewForm({ articleId }: ReviewFormProps) {
   const handleSubmit = async (newStatus: Status) => {
     if (!article || !userId) return;
     setSubmitting(true);
+    setError(null);
 
     try {
       const formData = new FormData();
@@ -118,20 +119,36 @@ export function ReviewForm({ articleId }: ReviewFormProps) {
       formData.append("status", newStatus);
       formData.append("reviewerId", userId);
 
+      console.log("Submitting review:", {
+        articleId: article.id,
+        status: newStatus,
+        hasFile: !!uploadedFile,
+        hasComments: !!comments,
+      });
+
       const response = await fetch(`/api/reviews/${article.id}/submit`, {
         method: "POST",
         body: formData,
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to submit review");
+        throw new Error(data.error || "Failed to submit review");
+      }
+
+      // Check if the response indicates success
+      if (data.success === false) {
+        throw new Error("Review submission was not successful");
       }
 
       // Redirect back to review dashboard
       window.location.href = "/dashboard/review";
     } catch (error) {
-      console.error("Error:", error);
-      setError("Failed to submit review");
+      console.error("Error submitting review:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to submit review"
+      );
     } finally {
       setSubmitting(false);
     }

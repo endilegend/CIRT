@@ -38,6 +38,23 @@ export async function POST(
       );
     }
 
+    // Check if the article exists and is in a valid state for assignment
+    const article = await prisma.article.findUnique({
+      where: { id: articleId },
+      select: { status: true },
+    });
+
+    if (!article) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    if (article.status !== "Sent") {
+      return NextResponse.json(
+        { error: "Article is not in a state that can be assigned" },
+        { status: 400 }
+      );
+    }
+
     // Create a review record and update the article status
     const [review, updatedArticle] = await prisma.$transaction([
       // Create the review record

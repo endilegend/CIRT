@@ -263,6 +263,8 @@ export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [publicationsCount, setPublicationsCount] = useState(0);
   const [totalApprovedCount, setTotalApprovedCount] = useState(0);
+  const [assignedArticlesCount, setAssignedArticlesCount] = useState(0);
+  const [sentArticlesCount, setSentArticlesCount] = useState(0);
 
   const fetchTotalApprovedCount = async () => {
     try {
@@ -274,6 +276,20 @@ export default function DashboardPage() {
       setTotalApprovedCount(data.count);
     } catch (error) {
       console.error("Error fetching total count:", error);
+    }
+  };
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch("/api/dashboard/stats");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard stats");
+      }
+      const data = await response.json();
+      setAssignedArticlesCount(data.assignedArticlesCount);
+      setSentArticlesCount(data.sentArticlesCount);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
     }
   };
 
@@ -306,6 +322,7 @@ export default function DashboardPage() {
       if (user) {
         fetchUserPublications(user.uid);
         fetchTotalApprovedCount();
+        fetchDashboardStats();
       } else {
         setError("User not authenticated");
         setLoading(false);
@@ -379,11 +396,11 @@ export default function DashboardPage() {
                 <BookOpen className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl text-white font-bold">
-                  An Ester Egg
+                <div className="text-3xl font-bold">
+                  {assignedArticlesCount}
                 </div>
                 <p className="text-sm text-gray-600">
-                  Review paper, article, and poster submissions
+                  Total articles assigned for review
                 </p>
               </CardContent>
               <CardFooter>
@@ -406,11 +423,9 @@ export default function DashboardPage() {
                 <AreaChart className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
-                  <br></br>
-                </div>
+                <div className="text-3xl font-bold">{sentArticlesCount}</div>
                 <p className="text-sm text-gray-600">
-                  View and edit assigned paper, article, and poster submissions
+                  Total articles with status "Sent"
                 </p>
               </CardContent>
               <CardFooter>

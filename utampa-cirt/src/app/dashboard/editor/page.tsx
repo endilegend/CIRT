@@ -140,8 +140,10 @@ export default function EditorPage() {
         body: JSON.stringify({ userId }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to assign editor");
+        throw new Error(data.error || "Failed to assign editor");
       }
 
       setSubmitted((prev) => ({ ...prev, [articleId.toString()]: true }));
@@ -158,7 +160,7 @@ export default function EditorPage() {
       });
     } catch (error) {
       console.error("Error assigning editor:", error);
-      alert("Failed to assign editor. Please try again.");
+      alert(error instanceof Error ? error.message : "Failed to assign editor");
     }
   };
 
@@ -295,81 +297,72 @@ export default function EditorPage() {
                               {article.author.f_name} {article.author.l_name}
                             </TableCell>
                             <TableCell className="relative">
-                              {submitted[article.id.toString()] ? (
-                                <span className="font-semibold text-green-600">
-                                  Assigned
-                                </span>
-                              ) : (
-                                <div className="relative">
-                                  <Input
-                                    type="text"
-                                    placeholder="Search users..."
-                                    value={
-                                      editorQueries[article.id.toString()] || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleInputChange(
+                              <div className="relative">
+                                <Input
+                                  type="text"
+                                  placeholder="Search users..."
+                                  value={
+                                    editorQueries[article.id.toString()] || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      article.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full"
+                                />
+                                {filteredSuggestions[article.id.toString()]
+                                  ?.length > 0 && (
+                                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                                    {filteredSuggestions[
+                                      article.id.toString()
+                                    ].map((user) => (
+                                      <div
+                                        key={user.id}
+                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() => {
+                                          setEditorQueries((prev) => ({
+                                            ...prev,
+                                            [article.id.toString()]: `${user.f_name} ${user.l_name}`,
+                                          }));
+                                          setFilteredSuggestions((prev) => ({
+                                            ...prev,
+                                            [article.id.toString()]: [],
+                                          }));
+                                          setSelectedReviewers((prev) => ({
+                                            ...prev,
+                                            [article.id.toString()]: user.id,
+                                          }));
+                                        }}
+                                      >
+                                        <div>
+                                          <span className="font-medium">
+                                            {user.f_name} {user.l_name}
+                                          </span>
+                                          <span className="text-gray-500 ml-2">
+                                            {user.email}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {selectedReviewers[article.id.toString()] && (
+                                  <Button
+                                    onClick={() =>
+                                      handleSubmit(
+                                        undefined,
                                         article.id,
-                                        e.target.value
+                                        selectedReviewers[article.id.toString()]
                                       )
                                     }
-                                    className="w-full"
-                                  />
-                                  {filteredSuggestions[article.id.toString()]
-                                    ?.length > 0 && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
-                                      {filteredSuggestions[
-                                        article.id.toString()
-                                      ].map((user) => (
-                                        <div
-                                          key={user.id}
-                                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                          onClick={() => {
-                                            setEditorQueries((prev) => ({
-                                              ...prev,
-                                              [article.id.toString()]: `${user.f_name} ${user.l_name}`,
-                                            }));
-                                            setFilteredSuggestions((prev) => ({
-                                              ...prev,
-                                              [article.id.toString()]: [],
-                                            }));
-                                            // Store the selected user ID instead of submitting immediately
-                                            setSelectedReviewers((prev) => ({
-                                              ...prev,
-                                              [article.id.toString()]: user.id,
-                                            }));
-                                          }}
-                                        >
-                                          <div>
-                                            <span className="font-medium">
-                                              {user.f_name} {user.l_name}
-                                            </span>
-                                            <span className="text-gray-500 ml-2">
-                                              {user.email}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {selectedReviewers[article.id.toString()] && (
-                                    <Button
-                                      onClick={() =>
-                                        handleSubmit(
-                                          undefined,
-                                          article.id,
-                                          selectedReviewers[
-                                            article.id.toString()
-                                          ]
-                                        )
-                                      }
-                                      className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      Submit for Review
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
+                                    className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    Submit for Review
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <Link href={`/article/${article.id}`}>

@@ -58,6 +58,11 @@ export function SpartyChat({ articleContent }: SpartyChatProps) {
       );
 
       const data = await response.json();
+
+      if (!data.choices || !data.choices[0]) {
+        throw new Error("Invalid response from DeepSeek API");
+      }
+
       const assistantMessage = data.choices[0].message.content;
 
       setMessages((prev) => [
