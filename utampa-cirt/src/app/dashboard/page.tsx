@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/table";
 import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth } from "firebase/auth";
+import { Article, Keyword } from "@prisma/client";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
@@ -254,13 +255,52 @@ function UploadForm({ file }: UploadFormProps) {
 // -----------------------------------------------------------------------------
 
 export default function DashboardPage() {
-  // This is a mocked authenticated page for demo purposes
-  const isAuthenticated = true;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [userPublications, setUserPublications] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserPublications = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+          setError("User not authenticated");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/user/publications?userId=${user.uid}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch publications");
+        }
+
+        const data = await response.json();
+        setUserPublications(data.publications);
+      } catch (error) {
+        console.error("Error fetching publications:", error);
+        setError("Failed to load publications");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserPublications();
+  }, []);
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    setIsUploadDialogOpen(true);
+  };
 
   return (
-    <MainLayout isAuthenticated={isAuthenticated}>
-      <div className="bg-slate-50 py-8 min-h-screen">
+    <MainLayout isAuthenticated={true}>
+      <div className="bg-slate-50 min-h-screen py-8">
         <div className="ut-container">
           {/* Page Header */}
           <div className="mb-8">
@@ -379,96 +419,97 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Upload Section */}
-          <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload New Article</CardTitle>
-                <CardDescription>
-                  Upload your latest research to share with the CIRT community
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DragDropFile onFileSelect={(file) => setSelectedFile(file)} />
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="text-sm text-gray-500">
-                  Maximum file size: 10MB
+          {/* Recent Publications */}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>My Recent Publications</CardTitle>
+                  <CardDescription>
+                    View and manage your recent submissions
+                  </CardDescription>
                 </div>
-                <Dialog>
+                <Dialog
+                  open={isUploadDialogOpen}
+                  onOpenChange={setIsUploadDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button className="bg-utred hover:bg-utred-dark">
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Upload Article
+                      New Publication
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Article Details</DialogTitle>
+                      <DialogTitle>Upload Publication</DialogTitle>
                       <DialogDescription>
-                        Provide metadata for your publication
+                        Upload your research paper, article, or poster in PDF
+                        format.
                       </DialogDescription>
                     </DialogHeader>
-                    <UploadForm file={selectedFile} />
-                    <DialogFooter></DialogFooter>
+                    {selectedFile ? (
+                      <UploadForm file={selectedFile} />
+                    ) : (
+                      <DragDropFile onFileSelect={handleFileSelect} />
+                    )}
                   </DialogContent>
                 </Dialog>
-              </CardFooter>
-            </Card>
-          </div>
-
-          {/* Recent Publications Table */}
-          <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Recent Publications</CardTitle>
-                <CardDescription>
-                  View and manage your recent contributions to the CIRT database
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-4">Loading publications...</div>
+              ) : error ? (
+                <div className="text-center text-red-500 py-4">{error}</div>
+              ) : userPublications.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">
+                  No publications yet. Click "New Publication" to add one.
+                </div>
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Title</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Date Uploaded</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {myPublications.map((pub) => (
-                      <TableRow key={pub.id}>
+                    {userPublications.map((publication) => (
+                      <TableRow key={publication.id}>
                         <TableCell className="font-medium">
-                          {pub.title}
+                          {publication.paper_name}
                         </TableCell>
-                        <TableCell>{pub.type}</TableCell>
-                        <TableCell>{pub.date}</TableCell>
+                        <TableCell>{publication.type}</TableCell>
                         <TableCell>
-                          <span className={getStatusClass(pub.status)}>
-                            {pub.status}
+                          {new Date(publication.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={getStatusClass(
+                              publication.status || "Sent"
+                            )}
+                          >
+                            {publication.status || "Sent"}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/dashboard/publications/${pub.id}`}>
-                            <Button className="hover:text-utred" size="sm">
-                              View
-                            </Button>
+                        <TableCell>
+                          <Link
+                            href={`/article/${publication.id}`}
+                            className="text-utred hover:underline"
+                          >
+                            View
                           </Link>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </CardContent>
-              <CardFooter>
-                <Link href="/dashboard/userpublications">
-                  <Button variant="outline">View All Publications</Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </MainLayout>
