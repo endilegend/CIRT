@@ -195,54 +195,47 @@ export default function RegisterPage() {
                     <input
                       type="checkbox"
                       id="terms"
+                      name="terms"
                       className="rounded border-gray-300 text-utred focus:ring-utred"
                       required
                     />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
+                    <Label htmlFor="terms" className="text-sm">
                       I agree to the{" "}
                       <Link
                         href="/terms"
                         className="text-utred hover:underline"
+                        target="_blank"
                       >
                         Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link
-                        href="/privacy"
-                        className="text-utred hover:underline"
-                      >
-                        Privacy Policy
                       </Link>
-                    </label>
+                    </Label>
                   </div>
+
+                  {errorMessage && (
+                    <div className="text-red-500 text-sm">{errorMessage}</div>
+                  )}
+                  {successMessage && (
+                    <div className="text-green-500 text-sm">
+                      {successMessage}
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
                     className="w-full bg-utred hover:bg-utred-dark"
                     disabled={loading}
                   >
-                    {loading ? "Registering..." : "Register"}
+                    {loading ? "Creating Account..." : "Create Account"}
                   </Button>
+
+                  <p className="text-center text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link href="/signin" className="text-utred hover:underline">
+                      Sign In
+                    </Link>
+                  </p>
                 </div>
               </form>
-              {errorMessage && (
-                <div className="mt-4 text-center text-sm text-red-600">
-                  {errorMessage}
-                </div>
-              )}
-              {successMessage && (
-                <div className="mt-4 text-center text-sm text-green-600">
-                  {successMessage}
-                </div>
-              )}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
-                  Already have an account?{" "}
-                  <Link href="/signin" className="text-utred hover:underline">
-                    Sign in
-                  </Link>
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
