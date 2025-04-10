@@ -60,7 +60,9 @@ export default function SignInPage() {
 
       // Ensure the email is verified
       if (!user.emailVerified) {
-        setErrorMessage("Please verify your email before logging in.");
+        setErrorMessage(
+          "Please verify your email before logging in. Check your inbox for the verification email."
+        );
         setLoading(false);
         return;
       }
@@ -69,7 +71,26 @@ export default function SignInPage() {
       router.push("/dashboard");
     } catch (error) {
       if (error instanceof FirebaseError) {
-        setErrorMessage(`Error: ${error.message ?? "Unknown error occurred"}`);
+        switch (error.code) {
+          case "auth/user-not-found":
+            setErrorMessage("No account found with this email address.");
+            break;
+          case "auth/wrong-password":
+            setErrorMessage(
+              "Incorrect password. Please try again or reset your password."
+            );
+            break;
+          case "auth/invalid-email":
+            setErrorMessage("Please enter a valid email address.");
+            break;
+          case "auth/too-many-requests":
+            setErrorMessage(
+              "Too many failed attempts. Please try again later or reset your password."
+            );
+            break;
+          default:
+            setErrorMessage("An error occurred. Please try again.");
+        }
       } else {
         setErrorMessage("An unexpected error occurred.");
       }
@@ -112,15 +133,7 @@ export default function SignInPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link
-                        href="/forgot-password"
-                        className="text-sm text-utred hover:underline"
-                      >
-                        Forgot Password?
-                      </Link>
-                    </div>
+                    <Label htmlFor="password">Password</Label>
                     <Input
                       id="password"
                       name="password"
@@ -128,6 +141,11 @@ export default function SignInPage() {
                       required
                     />
                   </div>
+
+                  {errorMessage && (
+                    <div className="text-red-500 text-sm">{errorMessage}</div>
+                  )}
+
                   <Button
                     type="submit"
                     className="w-full bg-utred hover:bg-utred-dark"
@@ -135,21 +153,29 @@ export default function SignInPage() {
                   >
                     {loading ? "Signing In..." : "Sign In"}
                   </Button>
+
+                  <div className="text-center">
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm text-utred hover:underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600">
+                      Don&apos;t have an account?{" "}
+                      <Link
+                        href="/register"
+                        className="text-utred hover:underline"
+                      >
+                        Register here
+                      </Link>
+                    </p>
+                  </div>
                 </div>
               </form>
-              {errorMessage && (
-                <div id="error-message" className="mt-4 text-center text-sm">
-                  {errorMessage}
-                </div>
-              )}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/register" className="text-utred hover:underline">
-                    Register here
-                  </Link>
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
