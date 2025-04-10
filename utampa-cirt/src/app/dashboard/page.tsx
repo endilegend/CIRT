@@ -426,17 +426,18 @@ export default function DashboardPage() {
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium">
                   Database Status
                 </CardTitle>
-                <Search className="h-4 w-4 text-muted-foreground" />
+                <Search className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalApprovedCount}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold">{totalApprovedCount}</div>
+                <p className="text-sm text-gray-600">
                   Total approved publications in system
                 </p>
+                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/search">
