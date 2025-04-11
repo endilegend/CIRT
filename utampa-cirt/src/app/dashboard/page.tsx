@@ -400,6 +400,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   Articles assigned to you for review
                 </p>
+                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/review">
@@ -425,6 +426,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600">
                   Articles waiting for editor review
                 </p>
+                <br></br>
               </CardContent>
               <CardFooter>
                 <Link href="/dashboard/editor">
