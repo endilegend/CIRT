@@ -241,17 +241,16 @@ export default function SearchPage() {
     </MainLayout>
   );
 }
-
-// Sample data for popular keywords
+// Keywords requested by client
 const popularKeywords = [
-  "Criminal Justice",
-  "Policing",
-  "Juvenile Delinquency",
-  "Criminology Theory",
   "Corrections",
-  "Law Enforcement",
-  "Social Justice",
+  "Sentencing",
+  "White Collar Crime",
+  "Mental Health",
+  "Victimology",
+  "Criminal Theory",
+  "Statistics",
+  "Policing",
   "Crime Prevention",
-  "Forensics",
-  "Rehabilitation",
+  "Policy",
 ];
