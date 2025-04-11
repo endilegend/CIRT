@@ -263,6 +263,22 @@ export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [publicationsCount, setPublicationsCount] = useState(0);
   const [totalApprovedCount, setTotalApprovedCount] = useState(0);
+  const [editCount, setEditCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  const fetchDashboardCounts = async () => {
+    try {
+      const response = await fetch("/api/dashboard/counts");
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard counts");
+      }
+      const data = await response.json();
+      setEditCount(data.editCount);
+      setReviewCount(data.reviewCount);
+    } catch (error) {
+      console.error("Error fetching dashboard counts:", error);
+    }
+  };
 
   const fetchTotalApprovedCount = async () => {
     try {
@@ -306,6 +322,7 @@ export default function DashboardPage() {
       if (user) {
         fetchUserPublications(user.uid);
         fetchTotalApprovedCount();
+        fetchDashboardCounts();
       } else {
         setError("User not authenticated");
         setLoading(false);
@@ -379,11 +396,9 @@ export default function DashboardPage() {
                 <BookOpen className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl text-white font-bold">
-                  An Ester Egg
-                </div>
+                <div className="text-3xl font-bold">{reviewCount}</div>
                 <p className="text-sm text-gray-600">
-                  Review paper, article, and poster submissions
+                  Articles assigned to you for review
                 </p>
               </CardContent>
               <CardFooter>
@@ -406,11 +421,9 @@ export default function DashboardPage() {
                 <AreaChart className="h-5 w-5 text-utred" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
-                  <br></br>
-                </div>
+                <div className="text-3xl font-bold">{editCount}</div>
                 <p className="text-sm text-gray-600">
-                  View and edit assigned paper, article, and poster submissions
+                  Articles waiting for editor review
                 </p>
               </CardContent>
               <CardFooter>
