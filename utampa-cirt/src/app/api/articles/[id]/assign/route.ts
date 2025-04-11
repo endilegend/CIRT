@@ -5,11 +5,11 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const { userId } = await request.json();
-    const articleId = parseInt(context.params.id);
+    const articleId = parseInt(params.id);
 
     if (!userId || !articleId) {
       return NextResponse.json(
