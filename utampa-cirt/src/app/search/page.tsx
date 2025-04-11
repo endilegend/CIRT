@@ -253,4 +253,6 @@ const popularKeywords = [
   "Policing",
   "Crime Prevention",
   "Policy",
+  "Sentencing",
+  "Methodology",
 ];
