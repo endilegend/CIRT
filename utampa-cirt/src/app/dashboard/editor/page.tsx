@@ -191,7 +191,11 @@ export default function EditorPage() {
   };
 
   const handleRoleSelect = (userId: string, role: string) => {
-    setSelectedRoles((prev) => ({ ...prev, [userId]: role }));
+    // Ensure the role matches the enum value exactly
+    const validRole = Object.values(Role).find((r) => r === role);
+    if (validRole) {
+      setSelectedRoles((prev) => ({ ...prev, [userId]: validRole }));
+    }
   };
 
   const handleRoleSubmit = async (userId: string) => {
@@ -207,10 +211,9 @@ export default function EditorPage() {
         body: JSON.stringify({ user_role: newRole }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update role");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update role");
       }
 
       // Refresh the users list
@@ -446,15 +449,11 @@ export default function EditorPage() {
                                     <SelectValue placeholder="Select a role" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Author">
-                                      Author
-                                    </SelectItem>
-                                    <SelectItem value="Reviewer">
-                                      Reviewer
-                                    </SelectItem>
-                                    <SelectItem value="Editor">
-                                      Editor
-                                    </SelectItem>
+                                    {Object.values(Role).map((role) => (
+                                      <SelectItem key={role} value={role}>
+                                        {role}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                                 {selectedRoles[user.id] &&

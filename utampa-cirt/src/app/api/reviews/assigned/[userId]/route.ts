@@ -3,12 +3,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
-) {
+export async function GET(request: Request) {
   try {
-    const userId = params.userId;
+    const url = new URL(request.url);
+    const userId = url.pathname.split("/").pop();
 
     if (!userId) {
       return NextResponse.json(

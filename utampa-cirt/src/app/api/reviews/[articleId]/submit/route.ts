@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
 import { writeFile } from "fs/promises";
 import { join } from "path";
+import { sendReviewStatusEmail } from "@/lib/email";
 
 const prisma = new PrismaClient();
 
@@ -73,8 +74,26 @@ export async function POST(
           status: status,
           ...(pdf_path ? { pdf_path: pdf_path } : {}),
         },
+        include: {
+          author: true,
+        },
       }),
     ]);
+
+    // Send email notification to the author if author exists
+    if (article.author) {
+      try {
+        await sendReviewStatusEmail(
+          article.author.email,
+          article.paper_name,
+          status,
+          comments
+        );
+      } catch (error) {
+        console.error("Error sending email notification:", error);
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({ review, article });
   } catch (error) {

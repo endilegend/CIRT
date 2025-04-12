@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     const { user_role } = await request.json();
-    const userId = params.id;
+    const { id: userId } = params;
 
     console.log("Received role:", user_role);
 
@@ -21,19 +21,15 @@ export async function PUT(
       );
     }
 
-    // Map string roles directly to Role enum values
-    const roleMap = {
-      Author: Role.Author,
-      Reviewer: Role.Reviewer,
-      Editor: Role.Editor,
-    };
-
-    const roleEnum = roleMap[user_role as keyof typeof roleMap];
+    // Convert the string role to the Role enum
+    const roleEnum = Role[user_role as keyof typeof Role];
 
     if (!roleEnum) {
       return NextResponse.json(
         {
-          error: `Invalid role value. Must be one of: Author, Reviewer, Editor`,
+          error: `Invalid role value. Must be one of: ${Object.values(
+            Role
+          ).join(", ")}`,
         },
         { status: 400 }
       );
@@ -48,16 +44,9 @@ export async function PUT(
       data: {
         user_role: roleEnum,
       },
-      select: {
-        id: true,
-        f_name: true,
-        l_name: true,
-        email: true,
-        user_role: true,
-      },
     });
 
-    return NextResponse.json({ user: updatedUser });
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Error updating user role:", error);
     return NextResponse.json(
