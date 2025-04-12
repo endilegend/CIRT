@@ -78,7 +78,7 @@ export default function SearchPage() {
   return (
     <MainLayout>
       <div className="bg-slate-50 min-h-screen py-8">
-        <div className="ut-container">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Search Header */}
           <div className="mb-8 text-center max-w-3xl mx-auto">
             <h1 className="text-3xl font-bold mb-4">CIRT Database Search</h1>
