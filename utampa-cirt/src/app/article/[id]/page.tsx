@@ -30,6 +30,7 @@ export default function ArticlePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const viewsIncremented = React.useRef(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -71,19 +72,22 @@ export default function ArticlePage({
         }
         setPdfContent(pdfData.content);
 
-        // Increment views
-        try {
-          const viewsResponse = await fetch(`/api/articles/${id}/views`, {
-            method: "POST",
-          });
-          if (viewsResponse.ok) {
-            const updatedArticle = await viewsResponse.json();
-            setArticle((prev) =>
-              prev ? { ...prev, views: updatedArticle.views } : null
-            );
+        // Increment views only if not already incremented
+        if (!viewsIncremented.current) {
+          try {
+            const viewsResponse = await fetch(`/api/articles/${id}/views`, {
+              method: "POST",
+            });
+            if (viewsResponse.ok) {
+              const updatedArticle = await viewsResponse.json();
+              setArticle((prev) =>
+                prev ? { ...prev, views: updatedArticle.views } : null
+              );
+              viewsIncremented.current = true;
+            }
+          } catch (error) {
+            console.error("Error incrementing views:", error);
           }
-        } catch (error) {
-          console.error("Error incrementing views:", error);
         }
       } catch (error) {
         console.error("Error:", error);
