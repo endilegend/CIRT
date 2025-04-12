@@ -4,22 +4,16 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Ensure the public directory exists
-const publicDir = path.join(process.cwd(), "public");
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir);
-}
-
-// Copy the PDF.js worker file
-const workerSource = path.join(
+// Source and destination paths
+const sourcePath = path.join(
   process.cwd(),
   "node_modules",
   "pdfjs-dist",
-  "legacy",
   "build",
-  "pdf.worker.js"
+  "pdf.worker.min.js"
 );
-const workerDest = path.join(publicDir, "pdf.worker.js");
+const destPath = path.join(process.cwd(), "public", "pdf.worker.min.js");
 
-fs.copyFileSync(workerSource, workerDest);
+// Copy the file
+fs.copyFileSync(sourcePath, destPath);
 console.log("PDF.js worker file copied to public directory");

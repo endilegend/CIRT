@@ -1,0 +1,1 @@
+<TextToSpeech articleId={article.id} />;

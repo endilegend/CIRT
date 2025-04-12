@@ -13,6 +13,7 @@ import {
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, User } from "@prisma/client";
 import { SpartyChat } from "@/components/SpartyChat";
+import { TextToSpeech } from "@/components/article/TextToSpeech";
 
 type ArticleWithAuthor = Article & {
   author: User;
@@ -134,6 +135,12 @@ export default function ArticlePage({
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* PDF Viewer */}
             <div className="lg:col-span-3">
+              <div className="flex justify-between items-center mb-4">
+                <Button onClick={handleDownload} variant="outline" size="sm">
+                  Download PDF
+                </Button>
+                {article.pdf_path && <TextToSpeech articleId={id} />}
+              </div>
               <iframe
                 src={article.pdf_path}
                 className="w-full h-[800px] rounded-lg border bg-white"
