@@ -302,7 +302,7 @@ export default function AboutPage() {
             <Link href="/search">
               <Button
                 variant="outline"
-                className="border-white text-white hover:bg-white/10 py-2 px-6 rounded-md text-lg"
+                className="border-white text-utred hover:bg-white/10 py-2 px-6 rounded-md text-lg"
               >
                 Explore Our Research
               </Button>
