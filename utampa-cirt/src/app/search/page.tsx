@@ -14,7 +14,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Calendar, Download, Users } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  Download,
+  Users,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { Article, User, Keyword } from "@prisma/client";
 
@@ -24,31 +31,14 @@ type ArticleWithRelations = Article & {
 };
 
 export default function SearchPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const fetchLatestArticles = async () => {
-      try {
-        const response = await fetch("/api/articles/latest");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        setArticles(data.articles || []);
-      } catch (error) {
-        console.error("Error fetching latest articles:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLatestArticles();
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       router.push(`/search/results?search=${encodeURIComponent(query)}`);
@@ -72,6 +62,35 @@ export default function SearchPage() {
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Failed to download PDF. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `/api/articles/latest?page=${currentPage}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch articles");
+        }
+        const data = await response.json();
+        setArticles(data.articles);
+        setTotalPages(data.pagination.totalPages);
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, [currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
     }
   };
 
@@ -158,7 +177,7 @@ export default function SearchPage() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Latest Articles</h2>
               <div className="text-sm text-gray-600">
-                Showing {articles.length} articles
+                Page {currentPage} of {totalPages}
               </div>
             </div>
 
@@ -167,75 +186,116 @@ export default function SearchPage() {
                 <p>Loading articles...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 mb-8">
-                {articles.map((article) => (
-                  <Card key={article.id} className="overflow-hidden">
-                    <div className="flex flex-col md:flex-row">
-                      <div className="flex-grow p-6">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
-                            {article.type || "Article"}
-                          </span>
-                          <span className="text-sm text-gray-500 flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(article.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-
-                        <Link href={`/article/${article.id}`} className="group">
-                          <h3 className="text-xl font-semibold mb-2 group-hover:text-utred transition-colors">
-                            {article.paper_name}
-                          </h3>
-                        </Link>
-
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                          <div className="flex items-center text-gray-500">
-                            <Users className="h-4 w-4 mr-1" />
-                            <span>
-                              {article.author
-                                ? `${article.author.f_name} ${article.author.l_name}`
-                                : "Unknown Author"}
+              <>
+                <div className="grid grid-cols-1 gap-6 mb-8">
+                  {articles.map((article) => (
+                    <Card key={article.id} className="overflow-hidden">
+                      <div className="flex flex-col md:flex-row">
+                        <div className="flex-grow p-6">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
+                              {article.type || "Article"}
+                            </span>
+                            <span className="text-sm text-gray-500 flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {new Date(article.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          <div className="flex items-center text-gray-500">
-                            <BookOpen className="h-4 w-4 mr-1" />
-                            <span>{article.type || "Article"}</span>
-                          </div>
-                        </div>
 
-                        {article.keywords && article.keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            {article.keywords.map((keyword) => (
-                              <span
-                                key={keyword.id}
-                                className="bg-utred/10 text-utred px-3 py-1 rounded-full text-sm"
-                              >
-                                {keyword.keyword}
+                          <Link
+                            href={`/article/${article.id}`}
+                            className="group"
+                          >
+                            <h3 className="text-xl font-semibold mb-2 group-hover:text-utred transition-colors">
+                              {article.paper_name}
+                            </h3>
+                          </Link>
+
+                          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                            <div className="flex items-center text-gray-500">
+                              <Users className="h-4 w-4 mr-1" />
+                              <span>
+                                {article.author
+                                  ? `${article.author.f_name} ${article.author.l_name}`
+                                  : "Unknown Author"}
                               </span>
-                            ))}
+                            </div>
+                            <div className="flex items-center text-gray-500">
+                              <BookOpen className="h-4 w-4 mr-1" />
+                              <span>{article.type || "Article"}</span>
+                            </div>
                           </div>
-                        )}
-                      </div>
 
-                      <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:w-48">
-                        <div className="text-center mb-4">
-                          <div className="text-2xl font-bold">
-                            {article.views}
-                          </div>
-                          <div className="text-sm text-gray-500">Views</div>
+                          {article.keywords && article.keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {article.keywords.map((keyword) => (
+                                <span
+                                  key={keyword.id}
+                                  className="bg-utred/10 text-utred px-3 py-1 rounded-full text-sm"
+                                >
+                                  {keyword.keyword}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <Button
-                          onClick={() => handleDownload(article)}
-                          className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark"
-                        >
-                          <Download className="h-4 w-4" />
-                          PDF
-                        </Button>
+
+                        <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:w-48">
+                          <div className="text-center mb-4">
+                            <div className="text-2xl font-bold">
+                              {article.views}
+                            </div>
+                            <div className="text-sm text-gray-500">Views</div>
+                          </div>
+                          <Button
+                            onClick={() => handleDownload(article)}
+                            className="w-full flex items-center justify-center gap-2 bg-utred hover:bg-utred-dark"
+                          >
+                            <Download className="h-4 w-4" />
+                            PDF
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-center items-center gap-4 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={page === currentPage ? "default" : "outline"}
+                          onClick={() => handlePageChange(page)}
+                          className="w-10 h-10"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </div>
