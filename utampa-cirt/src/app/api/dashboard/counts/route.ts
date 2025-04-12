@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
-import { getAuth } from "firebase/auth";
+import { adminAuth } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
-    const auth = getAuth();
-    const user = auth.currentUser;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("session")?.value;
 
-    if (!user) {
+    if (!sessionCookie) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const userId = decodedClaims.uid;
+
     // Get the user's role
     const dbUser = await prisma.user.findUnique({
-      where: { id: user.uid },
+      where: { id: userId },
       select: { user_role: true },
     });
 
@@ -33,7 +37,7 @@ export async function GET(request: Request) {
     // Count articles with status "Under_Review" and assigned to the current user for reviewers
     const reviewCount = await prisma.review.count({
       where: {
-        reviewerId: user.uid,
+        reviewerId: userId,
         article: {
           status: Status.Under_Review,
         },

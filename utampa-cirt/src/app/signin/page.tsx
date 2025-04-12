@@ -67,6 +67,22 @@ export default function SignInPage() {
         return;
       }
 
+      // Get the ID token
+      const idToken = await user.getIdToken();
+
+      // Create a session cookie
+      const response = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create session");
+      }
+
       // Redirect to the dashboard on success
       router.push("/dashboard");
     } catch (error) {
