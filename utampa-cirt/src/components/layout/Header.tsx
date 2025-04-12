@@ -37,10 +37,7 @@ export function Header() {
     <header className="bg-utred text-white">
       <div className="ut-container flex items-center justify-between h-16">
         <div className="flex items-center space-x-4">
-          <Link
-            href="https://www.ut.edu"
-            className="flex items-center space-x-2"
-          >
+          <Link href="https://www.ut.edu" className="flex items-center">
             <div className="relative h-8 w-8">
               <Image
                 src="/images/ut-logo-white.png"
@@ -49,7 +46,9 @@ export function Header() {
                 className="object-contain"
               />
             </div>
-            <span className="font-bold text-xl">CIRT</span>
+          </Link>
+          <Link href="/" className="font-bold text-xl hover:text-gray-200">
+            CIRT
           </Link>
           <span className="hidden md:inline-block text-sm">
             Criminology Institute for Research and Training
