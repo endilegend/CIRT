@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Article, User, Keyword } from "@prisma/client";
 import Link from "next/link";
 import { BookOpen, Calendar, Users, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type ArticleWithRelations = Article & {
   author: User | null;
@@ -16,10 +17,19 @@ type ArticleWithRelations = Article & {
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const searchQuery = searchParams.get("search") || "";
+  const [query, setQuery] = useState(searchQuery);
   const [results, setResults] = useState<ArticleWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/search/results?search=${encodeURIComponent(query)}`);
+    }
+  };
 
   const handleDownload = async (article: ArticleWithRelations) => {
     try {
@@ -94,6 +104,28 @@ export default function ResultsPage() {
     <MainLayout isAuthenticated={true}>
       <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
+          {/* Search Box */}
+          <div className="mb-8">
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white p-4 rounded-lg shadow-md"
+            >
+              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                <div className="flex-grow">
+                  <Input
+                    placeholder="Search by title, author, keywords..."
+                    className="w-full"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="bg-utred hover:bg-utred-dark">
+                  Search
+                </Button>
+              </div>
+            </form>
+          </div>
+
           <h1 className="text-2xl font-bold mb-6">
             {searchQuery
               ? `Search Results for "${searchQuery}"`
