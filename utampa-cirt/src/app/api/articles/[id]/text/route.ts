@@ -21,18 +21,19 @@ interface TextItem {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Ensure params.id is available
-    if (!params?.id) {
+    const { id } = await params;
+    // Ensure id is available
+    if (!id) {
       return NextResponse.json(
         { error: "Article ID is required" },
         { status: 400 }
       );
     }
 
-    const articleId = parseInt(params.id);
+    const articleId = parseInt(id);
 
     if (isNaN(articleId)) {
       return NextResponse.json(

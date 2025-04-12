@@ -14,6 +14,20 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ articleId }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const incrementViews = async () => {
+      try {
+        await fetch(`/api/articles/${articleId}/views`, {
+          method: "POST",
+        });
+      } catch (error) {
+        console.error("Error incrementing views:", error);
+      }
+    };
+
+    incrementViews();
+  }, [articleId]);
+
+  useEffect(() => {
     const fetchPdf = async () => {
       try {
         const response = await fetch(`/api/articles/${articleId}/pdf`);

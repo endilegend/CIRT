@@ -70,6 +70,21 @@ export default function ArticlePage({
           throw new Error("No PDF content available");
         }
         setPdfContent(pdfData.content);
+
+        // Increment views
+        try {
+          const viewsResponse = await fetch(`/api/articles/${id}/views`, {
+            method: "POST",
+          });
+          if (viewsResponse.ok) {
+            const updatedArticle = await viewsResponse.json();
+            setArticle((prev) =>
+              prev ? { ...prev, views: updatedArticle.views } : null
+            );
+          }
+        } catch (error) {
+          console.error("Error incrementing views:", error);
+        }
       } catch (error) {
         console.error("Error:", error);
         setError(error instanceof Error ? error.message : "An error occurred");

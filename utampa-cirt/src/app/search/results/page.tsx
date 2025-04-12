@@ -175,7 +175,9 @@ export default function ResultsPage() {
 
                       <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:w-48">
                         <div className="text-center mb-4">
-                          <div className="text-2xl font-bold">0</div>
+                          <div className="text-2xl font-bold">
+                            {result.views}
+                          </div>
                           <div className="text-sm text-gray-500">Views</div>
                         </div>
                         <Button
