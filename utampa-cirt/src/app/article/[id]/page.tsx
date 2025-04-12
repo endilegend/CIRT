@@ -15,6 +15,7 @@ import { Article, User } from "@prisma/client";
 import { SpartyChat } from "@/components/SpartyChat";
 import { TextToSpeech } from "@/components/article/TextToSpeech";
 
+// Define a type that extends Article with author information
 type ArticleWithAuthor = Article & {
   author: User;
 };
@@ -24,16 +25,23 @@ export default function ArticlePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Extract article ID from params
   const { id } = React.use(params);
+
+  // State management for article data, PDF content, loading state, and errors
   const [article, setArticle] = useState<ArticleWithAuthor | null>(null);
   const [pdfContent, setPdfContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Ref to track if views have been incremented to prevent double counting
   const viewsIncremented = React.useRef(false);
 
+  // Effect to handle Firebase authentication state
   useEffect(() => {
     const auth = getAuth();
+    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
@@ -42,12 +50,15 @@ export default function ArticlePage({
       }
     });
 
+    // Cleanup subscription on component unmount
     return () => unsubscribe();
   }, []);
 
+  // Effect to fetch article data and handle view counting
   useEffect(() => {
     const fetchArticle = async () => {
       try {
+        // Fetch article data
         const response = await fetch(`/api/articles/${id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch article");
@@ -72,7 +83,7 @@ export default function ArticlePage({
         }
         setPdfContent(pdfData.content);
 
-        // Increment views only if not already incremented
+        // Increment views only if not already incremented in this session
         if (!viewsIncremented.current) {
           try {
             const viewsResponse = await fetch(`/api/articles/${id}/views`, {
@@ -80,9 +91,11 @@ export default function ArticlePage({
             });
             if (viewsResponse.ok) {
               const updatedArticle = await viewsResponse.json();
+              // Update local state with new view count
               setArticle((prev) =>
                 prev ? { ...prev, views: updatedArticle.views } : null
               );
+              // Mark views as incremented to prevent double counting
               viewsIncremented.current = true;
             }
           } catch (error) {
@@ -97,11 +110,13 @@ export default function ArticlePage({
       }
     };
 
+    // Only fetch if we have an article ID
     if (id) {
       fetchArticle();
     }
   }, [id]);
 
+  // Function to handle PDF download
   const handleDownload = async () => {
     if (!article) return;
 
@@ -122,6 +137,7 @@ export default function ArticlePage({
     }
   };
 
+  // Loading state UI
   if (loading) {
     return (
       <MainLayout isAuthenticated={!!userId}>
@@ -130,6 +146,7 @@ export default function ArticlePage({
     );
   }
 
+  // Error state UI
   if (error || !article) {
     return (
       <MainLayout isAuthenticated={!!userId}>
@@ -140,6 +157,7 @@ export default function ArticlePage({
     );
   }
 
+  // Main article page UI
   return (
     <MainLayout isAuthenticated={!!userId}>
       <div className="bg-slate-50 py-8 min-h-screen">
@@ -152,7 +170,7 @@ export default function ArticlePage({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* PDF Viewer */}
+            {/* PDF Viewer Section */}
             <div className="lg:col-span-3">
               <div className="flex justify-between items-center mb-4">
                 <Button onClick={handleDownload} variant="outline" size="sm">
@@ -167,7 +185,7 @@ export default function ArticlePage({
               />
             </div>
 
-            {/* Sparty Chat */}
+            {/* Sparty Chat Section */}
             <div className="lg:col-span-1">
               <div className="sticky top-8">
                 <SpartyChat articleContent={pdfContent || ""} />
