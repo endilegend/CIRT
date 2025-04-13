@@ -48,12 +48,16 @@ export async function POST(
         currentArticle.pdf_path.split("/").pop() ||
         `${articleIdNum}_${Date.now()}.pdf`;
 
+      // Add a version parameter to the filename to prevent caching
+      const versionedFileName = `${fileName.split(".")[0]}_v${Date.now()}.pdf`;
+
       // Upload the new file to Supabase storage, replacing the existing one
       const { error: uploadError } = await supabase.storage
         .from("articles")
-        .upload(fileName, blob, {
+        .upload(versionedFileName, blob, {
           upsert: true,
           contentType: "application/pdf",
+          cacheControl: "no-cache, no-store, must-revalidate",
         });
 
       if (uploadError) {
@@ -64,10 +68,10 @@ export async function POST(
         );
       }
 
-      // Get the public URL of the uploaded file
+      // Get the public URL of the uploaded file with cache control
       const {
         data: { publicUrl },
-      } = supabase.storage.from("articles").getPublicUrl(fileName);
+      } = supabase.storage.from("articles").getPublicUrl(versionedFileName);
 
       pdf_path = publicUrl;
     }
