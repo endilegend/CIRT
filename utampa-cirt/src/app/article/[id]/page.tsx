@@ -14,6 +14,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, User } from "@prisma/client";
 import { SpartyChat } from "@/components/SpartyChat";
 import { TextToSpeech } from "@/components/article/TextToSpeech";
+import { supabase } from "@/lib/supabase";
 
 // Define a type that extends Article with author information
 type ArticleWithAuthor = Article & {
@@ -66,7 +67,7 @@ export default function ArticlePage({
         const data = await response.json();
         setArticle(data.article);
 
-        // Fetch PDF content
+        // Fetch PDF content for Sparty Chat
         const pdfResponse = await fetch(`/api/articles/${id}/pdf`);
 
         if (!pdfResponse.ok) {
@@ -121,7 +122,13 @@ export default function ArticlePage({
     if (!article) return;
 
     try {
-      const response = await fetch(`/api/download/${article.pdf_path}`);
+      // If the pdf_path is already a full URL, use it directly
+      const pdfUrl = article.pdf_path.startsWith("http")
+        ? article.pdf_path
+        : supabase.storage.from("articles").getPublicUrl(article.pdf_path).data
+            .publicUrl;
+
+      const response = await fetch(pdfUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -157,6 +164,12 @@ export default function ArticlePage({
     );
   }
 
+  // Get the public URL for the PDF - use the stored URL if it's already a full URL
+  const pdfUrl = article.pdf_path.startsWith("http")
+    ? article.pdf_path
+    : supabase.storage.from("articles").getPublicUrl(article.pdf_path).data
+        .publicUrl;
+
   // Main article page UI
   return (
     <MainLayout isAuthenticated={!!userId}>
@@ -179,7 +192,7 @@ export default function ArticlePage({
                 {article.pdf_path && <TextToSpeech articleId={id} />}
               </div>
               <iframe
-                src={article.pdf_path}
+                src={pdfUrl}
                 className="w-full h-[800px] rounded-lg border bg-white"
                 title={article.paper_name}
               />

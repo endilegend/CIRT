@@ -1,40 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { readFile } from "fs/promises";
-import { join } from "path";
-import * as pdfjsLib from "pdfjs-dist";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { supabase } from "@/lib/supabase";
 
 const prisma = new PrismaClient();
 
-// Initialize PDF.js worker with local worker file
-pdfjsLib.GlobalWorkerOptions.workerSrc = join(
-  process.cwd(),
-  "node_modules",
-  "pdfjs-dist",
-  "build",
-  "pdf.worker.min.js"
-);
-
-interface TextItem {
-  str: string;
+// Helper function to get file path from full URL
+function getFilePathFromUrl(url: string): string {
+  try {
+    // Extract the filename from the full URL
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split("/");
+    return pathParts[pathParts.length - 1];
+  } catch (e) {
+    // If the URL parsing fails, assume it's just a filename
+    return url;
+  }
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
-    // Ensure id is available
-    if (!id) {
-      return NextResponse.json(
-        { error: "Article ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const articleId = parseInt(id);
-
+    const articleId = parseInt(params.id);
     if (isNaN(articleId)) {
       return NextResponse.json(
         { error: "Invalid article ID" },
@@ -42,60 +31,107 @@ export async function GET(
       );
     }
 
-    // First get the article to get the PDF path
+    console.log(`Processing text extraction for article ID: ${articleId}`);
+
+    // Get the article from the database
     const article = await prisma.article.findUnique({
       where: { id: articleId },
+      select: { pdf_path: true },
     });
 
     if (!article) {
+      console.log("Article not found");
       return NextResponse.json({ error: "Article not found" }, { status: 404 });
     }
 
     if (!article.pdf_path) {
+      console.log("No PDF path found for article");
       return NextResponse.json(
         { error: "No PDF file associated with this article" },
         { status: 404 }
       );
     }
 
-    // Clean up the path - remove any leading slashes and ensure we're looking in public/uploads
-    const cleanPath = article.pdf_path.replace(/^\/?(public\/)?/, "");
-    const absolutePath = join(process.cwd(), "public", cleanPath);
+    console.log(`Fetching PDF from path: ${article.pdf_path}`);
 
-    console.log("PDF path from DB:", article.pdf_path);
-    console.log("Attempting to read from:", absolutePath);
+    // Get just the filename from the full URL
+    const filePath = getFilePathFromUrl(article.pdf_path);
+    console.log("Extracted file path:", filePath);
+
+    // Download the PDF from Supabase storage
+    const { data, error } = await supabase.storage
+      .from("articles")
+      .download(filePath);
+
+    if (error) {
+      console.error("Error downloading PDF:", error);
+      return NextResponse.json(
+        { error: `Failed to download PDF: ${error.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      console.log("No PDF data received");
+      return NextResponse.json(
+        { error: "No PDF data received from storage" },
+        { status: 500 }
+      );
+    }
+
+    console.log("PDF downloaded successfully, extracting text...");
 
     try {
-      const dataBuffer = await readFile(absolutePath);
-      const pdf = await pdfjsLib.getDocument({ data: dataBuffer }).promise;
-      let text = "";
+      // Convert the blob to buffer
+      const buffer = Buffer.from(await data.arrayBuffer());
+      console.log(`PDF buffer size: ${buffer.length} bytes`);
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item) => ("str" in item ? item.str : ""))
-          .join(" ");
-        text += pageText + "\n\n";
+      // Use pdf-parse with explicit options
+      const options = {
+        max: 0, // No page limit
+        version: "default",
+      };
+
+      const pdfData = await pdfParse(buffer, options);
+
+      if (!pdfData) {
+        console.error("PDF parsing returned no data");
+        return NextResponse.json(
+          { error: "PDF parsing returned no data" },
+          { status: 500 }
+        );
       }
 
-      return NextResponse.json({ text });
-    } catch (error) {
-      console.error("Error reading PDF:", error);
+      if (!pdfData.text) {
+        console.error("PDF contains no extractable text");
+        return NextResponse.json(
+          { error: "PDF contains no extractable text" },
+          { status: 500 }
+        );
+      }
+
+      console.log(
+        `Text extraction completed. Extracted ${pdfData.text.length} characters`
+      );
+      return NextResponse.json({ text: pdfData.text });
+    } catch (parseError) {
+      console.error("Error parsing PDF:", parseError);
       return NextResponse.json(
         {
-          error: "Failed to read PDF file",
-          details: error instanceof Error ? error.message : "Unknown error",
+          error: `Failed to parse PDF: ${
+            parseError instanceof Error ? parseError.message : "Unknown error"
+          }`,
         },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in text extraction:", error);
     return NextResponse.json(
       {
-        error: "Failed to process request",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: `Failed to process request: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       },
       { status: 500 }
     );

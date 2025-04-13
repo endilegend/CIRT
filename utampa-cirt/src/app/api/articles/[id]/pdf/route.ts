@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { readFile } from "fs/promises";
-import { join } from "path";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { supabase } from "@/lib/supabase";
 
 const prisma = new PrismaClient();
+
+// Helper function to get file path from full URL
+function getFilePathFromUrl(url: string): string {
+  try {
+    // Extract the filename from the full URL
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split("/");
+    return pathParts[pathParts.length - 1];
+  } catch (e) {
+    // If the URL parsing fails, assume it's just a filename
+    return url;
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -12,12 +24,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    console.log("Fetching PDF for article ID:", id);
+
     // First get the article to get the PDF path
     const article = await prisma.article.findUnique({
       where: { id: parseInt(id) },
     });
 
     if (!article) {
+      console.error("Article not found for ID:", id);
       return NextResponse.json(
         { error: "Article not found" },
         {
@@ -28,6 +43,7 @@ export async function GET(
     }
 
     if (!article.pdf_path) {
+      console.error("No PDF path found for article:", article.id);
       return NextResponse.json(
         { error: "No PDF file associated with this article" },
         {
@@ -37,17 +53,37 @@ export async function GET(
       );
     }
 
-    // Log the paths for debugging
+    // Log the path for debugging
     console.log("PDF path from DB:", article.pdf_path);
 
-    // Clean up the path - remove any leading slashes and ensure we're looking in public/uploads
-    const cleanPath = article.pdf_path.replace(/^\/?(public\/)?/, "");
-    const absolutePath = join(process.cwd(), "public", cleanPath);
-
-    console.log("Attempting to read from:", absolutePath);
+    // Get just the filename from the full URL
+    const filePath = getFilePathFromUrl(article.pdf_path);
+    console.log("Extracted file path:", filePath);
 
     try {
-      const dataBuffer = await readFile(absolutePath);
+      // Download the file from Supabase storage
+      const { data, error } = await supabase.storage
+        .from("articles")
+        .download(filePath);
+
+      if (error) {
+        console.error("Error downloading from Supabase:", error);
+        throw new Error(`Failed to download PDF: ${error.message}`);
+      }
+
+      if (!data) {
+        console.error("No data received from Supabase");
+        return NextResponse.json(
+          { error: "PDF file not found in storage" },
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Convert the blob to buffer
+      const buffer = Buffer.from(await data.arrayBuffer());
 
       // Use pdf-parse with explicit options
       const options = {
@@ -55,9 +91,10 @@ export async function GET(
         version: "default",
       };
 
-      const data = await pdfParse(dataBuffer, options);
+      const pdfData = await pdfParse(buffer, options);
 
-      if (!data || !data.text) {
+      if (!pdfData || !pdfData.text) {
+        console.error("Failed to parse PDF content");
         return NextResponse.json(
           { error: "Failed to parse PDF content" },
           {
@@ -68,7 +105,7 @@ export async function GET(
       }
 
       return NextResponse.json(
-        { content: data.text },
+        { content: pdfData.text },
         { headers: { "Content-Type": "application/json" } }
       );
     } catch (error) {
@@ -77,8 +114,7 @@ export async function GET(
         {
           error: "Failed to read PDF file",
           details: error instanceof Error ? error.message : "Unknown error",
-          path: absolutePath,
-          storedPath: article.pdf_path,
+          path: article.pdf_path,
         },
         {
           status: 500,

@@ -22,15 +22,22 @@ export function TextToSpeech({ articleId }: TextToSpeechProps) {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch text");
+          throw new Error(
+            errorData.error || `HTTP error! status: ${response.status}`
+          );
         }
 
         const data = await response.json();
+        if (!data.text) {
+          throw new Error("No text content available in the response");
+        }
         setText(data.text);
       } catch (error) {
         console.error("Error fetching text:", error);
         setError(
-          error instanceof Error ? error.message : "Failed to fetch text"
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch text. Please ensure the article has a valid PDF file."
         );
       } finally {
         setLoading(false);
