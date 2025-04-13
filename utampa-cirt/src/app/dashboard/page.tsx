@@ -628,7 +628,7 @@ export default function DashboardPage() {
                           </TableCell>
                           <TableCell>
                             <Link
-                              href={`/article/${publication.id}`}
+                              href={`/dashboard/author/${publication.id}`}
                               className="text-utred hover:underline"
                             >
                               View

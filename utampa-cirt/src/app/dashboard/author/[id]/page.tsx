@@ -10,23 +10,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { Article, User, Status } from "@prisma/client";
+import { Article, User, Review, Status } from "@prisma/client";
+import { supabase } from "@/lib/supabase";
 
 type ArticleWithAuthor = Article & {
   author: User;
-  reviews: {
-    comments: string;
-    status: Status;
+  reviews: (Review & {
     reviewer: User;
-  }[];
+    status: Status;
+  })[];
+};
+
+type PageParams = {
+  id: string;
 };
 
 export default function AuthorArticlePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<PageParams>;
 }) {
   const [article, setArticle] = useState<ArticleWithAuthor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +37,8 @@ export default function AuthorArticlePage({
   const [userId, setUserId] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const resolvedParams = React.use(params);
+  const articleId = resolvedParams.id;
 
   useEffect(() => {
     const auth = getAuth();
@@ -53,12 +58,13 @@ export default function AuthorArticlePage({
       if (!userId) return;
 
       try {
-        const response = await fetch(`/api/articles/${params.id}`);
+        const response = await fetch(`/api/articles/${articleId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch article");
         }
         const data = await response.json();
         setArticle(data.article);
+        setError(null);
       } catch (error) {
         console.error("Error:", error);
         setError("Failed to load article");
@@ -70,27 +76,7 @@ export default function AuthorArticlePage({
     if (userId) {
       fetchArticle();
     }
-  }, [params.id, userId]);
-
-  const handleDownload = async () => {
-    if (!article) return;
-
-    try {
-      const response = await fetch(`/api/download/${article.pdf_path}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = article.paper_name + ".pdf";
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      setError("Failed to download file");
-    }
-  };
+  }, [articleId, userId]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -106,20 +92,29 @@ export default function AuthorArticlePage({
     try {
       const formData = new FormData();
       formData.append("file", uploadedFile);
-      formData.append("articleId", article.id.toString());
-      formData.append("authorId", userId);
+      formData.append("status", "Under_Review");
+
+      // Get the current Firebase token
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
 
       const response = await fetch(`/api/articles/${article.id}/resubmit`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
         throw new Error("Failed to resubmit article");
       }
 
-      // Redirect back to author dashboard
-      window.location.href = "/dashboard/author";
+      // Refresh the page to show updated status
+      window.location.reload();
     } catch (error) {
       console.error("Error:", error);
       setError("Failed to resubmit article");
@@ -179,8 +174,18 @@ export default function AuthorArticlePage({
                   </div>
 
                   <div className="space-y-2">
-                    <Button onClick={handleDownload} className="w-full">
-                      Download Article
+                    <Button
+                      onClick={() => {
+                        const pdfUrl = article.pdf_path.startsWith("http")
+                          ? article.pdf_path
+                          : supabase.storage
+                              .from("articles")
+                              .getPublicUrl(article.pdf_path).data.publicUrl;
+                        window.open(pdfUrl, "_blank");
+                      }}
+                      className="w-full"
+                    >
+                      View PDF
                     </Button>
                   </div>
 
@@ -241,7 +246,7 @@ export default function AuthorArticlePage({
                           {review.reviewer.l_name}
                         </div>
                         <div className="text-sm text-gray-600 mb-2">
-                          Status: {review.status.replace("_", " ")}
+                          Status: {review.status?.replace("_", " ")}
                         </div>
                         <div className="bg-slate-50 p-4 rounded-md">
                           {review.comments}

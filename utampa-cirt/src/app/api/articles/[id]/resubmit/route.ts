@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
-import { getToken } from "next-auth/jwt";
-import { writeFile, unlink } from "fs/promises";
-import { join } from "path";
+import { adminAuth } from "@/lib/firebase-admin";
+import { supabase } from "@/lib/supabase";
 
 const prisma = new PrismaClient();
 
@@ -11,10 +10,19 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const token = await getToken({ req: request });
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.split("Bearer ")[1];
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify Firebase token using the initialized adminAuth
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    const userId = decodedToken.uid;
 
     const articleId = parseInt(params.id);
     const formData = await request.formData();
@@ -33,7 +41,7 @@ export async function POST(
       where: { id: articleId },
     });
 
-    if (!article || article.author_id !== token.sub) {
+    if (!article || article.author_id !== userId) {
       return NextResponse.json(
         { error: "Article not found or unauthorized" },
         { status: 404 }
@@ -47,29 +55,39 @@ export async function POST(
       );
     }
 
-    // Delete the old PDF file if it exists
-    if (article.pdf_path) {
-      try {
-        const oldFilePath = join(process.cwd(), "public", article.pdf_path);
-        await unlink(oldFilePath);
-      } catch (error) {
-        console.error("Error deleting old PDF file:", error);
-        // Continue with the upload even if deletion fails
-      }
+    // Convert the file to a Blob with the correct MIME type
+    const blob = new Blob([await file.arrayBuffer()], {
+      type: "application/pdf",
+    });
+
+    // Extract the filename from the current PDF path or create a new one
+    const fileName =
+      article.pdf_path.split("/").pop() || `${articleId}_${Date.now()}.pdf`;
+
+    // Add a version parameter to the filename to prevent caching
+    const versionedFileName = `${fileName.split(".")[0]}_v${Date.now()}.pdf`;
+
+    // Upload the new file to Supabase storage, replacing the existing one
+    const { error: uploadError } = await supabase.storage
+      .from("articles")
+      .upload(versionedFileName, blob, {
+        upsert: true,
+        contentType: "application/pdf",
+        cacheControl: "no-cache, no-store, must-revalidate",
+      });
+
+    if (uploadError) {
+      console.error("Error uploading file to Supabase:", uploadError);
+      return NextResponse.json(
+        { error: "Failed to upload file" },
+        { status: 500 }
+      );
     }
 
-    // Save the new PDF file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create a unique filename using timestamp
-    const timestamp = Date.now();
-    const filename = `${articleId}_${timestamp}.pdf`;
-    const uploadDir = join(process.cwd(), "public/pdfs");
-    const filepath = join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-    const pdf_path = `/pdfs/${filename}`;
+    // Get the public URL of the uploaded file with cache control
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("articles").getPublicUrl(versionedFileName);
 
     // Update the article with new PDF and status
     const updatedArticle = await prisma.article.update({
@@ -77,7 +95,7 @@ export async function POST(
         id: articleId,
       },
       data: {
-        pdf_path: pdf_path,
+        pdf_path: publicUrl,
         status: status,
       },
     });
