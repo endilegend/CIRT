@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,8 @@ import {
 } from "@/components/ui/table";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ArticlesPage() {
+function ArticlesContent() {
   const isAuthenticated = true;
-
   const [pdfPath, setPdfPath] = useState<string>("");
   const searchParams = useSearchParams();
 
@@ -61,5 +60,13 @@ export default function ArticlesPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ArticlesContent />
+    </Suspense>
   );
 }
