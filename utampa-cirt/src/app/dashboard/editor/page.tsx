@@ -70,6 +70,7 @@ export default function EditorPage() {
   }>({});
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [featuredSearchQuery, setFeaturedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -306,6 +307,10 @@ export default function EditorPage() {
       default:
         return "bg-gray-200 text-gray-800";
     }
+  };
+
+  const handleFeaturedSearch = (query: string) => {
+    setFeaturedSearchQuery(query);
   };
 
   useEffect(() => {
@@ -591,8 +596,8 @@ export default function EditorPage() {
               <div className="mb-4">
                 <Input
                   placeholder="Search articles by title or author..."
-                  value={userSearchQuery}
-                  onChange={(e) => handleUserSearch(e.target.value)}
+                  value={featuredSearchQuery}
+                  onChange={(e) => handleFeaturedSearch(e.target.value)}
                   className="max-w-sm"
                 />
               </div>
@@ -613,10 +618,10 @@ export default function EditorPage() {
                         (article) =>
                           article.paper_name
                             .toLowerCase()
-                            .includes(userSearchQuery.toLowerCase()) ||
+                            .includes(featuredSearchQuery.toLowerCase()) ||
                           `${article.author.f_name} ${article.author.l_name}`
                             .toLowerCase()
-                            .includes(userSearchQuery.toLowerCase())
+                            .includes(featuredSearchQuery.toLowerCase())
                       )
                       .map((article) => (
                         <TableRow key={article.id}>

@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       articles,
       pagination: {
         currentPage: page,
@@ -43,6 +43,14 @@ export async function GET(request: Request) {
         itemsPerPage: limit,
       },
     });
+
+    // Add cache headers
+    response.headers.set(
+      "Cache-Control",
+      "public, s-maxage=60, stale-while-revalidate=30"
+    );
+
+    return response;
   } catch (error) {
     console.error("Error fetching approved articles:", error);
     return NextResponse.json(

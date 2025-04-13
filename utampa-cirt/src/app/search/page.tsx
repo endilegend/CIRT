@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,19 @@ type ArticleWithRelations = Article & {
   keywords: Keyword[];
 };
 
+// Cache for storing fetched articles
+type CachedData = {
+  articles: ArticleWithRelations[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+};
+
+const articleCache = new Map<string, CachedData>();
+
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -39,14 +52,17 @@ export default function SearchPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/search/results?search=${encodeURIComponent(query)}`);
-    }
-  };
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (query.trim()) {
+        router.push(`/search/results?search=${encodeURIComponent(query)}`);
+      }
+    },
+    [query, router]
+  );
 
-  const handleDownload = async (article: ArticleWithRelations) => {
+  const handleDownload = useCallback(async (article: ArticleWithRelations) => {
     try {
       const response = await fetch(article.pdf_path);
       if (!response.ok) throw new Error("Failed to fetch PDF");
@@ -64,9 +80,23 @@ export default function SearchPage() {
       console.error("Error downloading PDF:", error);
       alert("Failed to download PDF. Please try again.");
     }
-  };
+  }, []);
 
   const fetchArticles = useCallback(async (page: number = 1) => {
+    const cacheKey = `articles-page-${page}`;
+
+    // Check cache first
+    if (articleCache.has(cacheKey)) {
+      const cachedData = articleCache.get(cacheKey);
+      if (cachedData) {
+        setArticles(cachedData.articles);
+        setTotalPages(cachedData.pagination.totalPages);
+        setCurrentPage(cachedData.pagination.currentPage);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`/api/articles/approved?page=${page}`);
@@ -74,6 +104,10 @@ export default function SearchPage() {
         throw new Error("Failed to fetch articles");
       }
       const data = await response.json();
+
+      // Cache the response
+      articleCache.set(cacheKey, data);
+
       setArticles(data.articles);
       setTotalPages(data.pagination.totalPages);
       setCurrentPage(data.pagination.currentPage);
@@ -89,11 +123,17 @@ export default function SearchPage() {
     fetchArticles();
   }, [fetchArticles]);
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      fetchArticles(newPage);
-    }
-  };
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      if (newPage >= 1 && newPage <= totalPages) {
+        fetchArticles(newPage);
+      }
+    },
+    [fetchArticles, totalPages]
+  );
+
+  // Memoize the articles list to prevent unnecessary re-renders
+  const memoizedArticles = useMemo(() => articles, [articles]);
 
   return (
     <MainLayout>
@@ -189,7 +229,7 @@ export default function SearchPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 gap-6 mb-8">
-                  {articles.map((article) => (
+                  {memoizedArticles.map((article) => (
                     <Card key={article.id} className="overflow-hidden">
                       <div className="flex flex-col md:flex-row">
                         <div className="flex-grow p-6">
