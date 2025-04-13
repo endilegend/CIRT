@@ -34,6 +34,7 @@ import {
 import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword } from "@prisma/client";
+import { supabase } from "@/lib/supabase";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
@@ -159,6 +160,8 @@ function UploadForm({ file }: UploadFormProps) {
   const [paperName, setPaperName] = useState("");
   const [type, setType] = useState("Article");
   const [keywords, setKeywords] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -175,32 +178,57 @@ function UploadForm({ file }: UploadFormProps) {
       return;
     }
 
+    setIsUploading(true);
+    setUploadError(null);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("name", paperName);
-      formData.append("type", type);
-      formData.append("keywords", keywords);
-      formData.append("author_id", user.uid);
+      // Upload file to Supabase storage
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("articles")
+        .upload(fileName, file);
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        console.error("Upload error:", data.error);
-        alert("Error uploading file: " + data.error);
-        return;
+      if (uploadError) {
+        throw uploadError;
       }
 
-      console.log("Upload successful:", data);
+      // Get the public URL of the uploaded file
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("articles").getPublicUrl(fileName);
+
+      // Create article in database with Supabase URL
+      const response = await fetch("/api/articles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paper_name: paperName,
+          type,
+          keywords: keywords.split(",").map((k) => k.trim()),
+          author_id: user.uid,
+          pdf_path: publicUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create article");
+      }
+
       alert("Upload successful!");
-      // Optionally reset fields or close dialog
+      // Reset form
+      setPaperName("");
+      setType("Article");
+      setKeywords("");
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Upload failed. Check console for details.");
+      setUploadError(
+        err instanceof Error ? err.message : "Upload failed. Please try again."
+      );
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -243,8 +271,13 @@ function UploadForm({ file }: UploadFormProps) {
           onChange={(e) => setPaperName(e.target.value)}
         />
       </div>
-      <Button type="submit" className="bg-utred hover:bg-utred-dark">
-        Submit
+      {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
+      <Button
+        type="submit"
+        className="bg-utred hover:bg-utred-dark"
+        disabled={isUploading}
+      >
+        {isUploading ? "Uploading..." : "Submit"}
       </Button>
     </form>
   );
@@ -265,6 +298,9 @@ export default function DashboardPage() {
   const [totalApprovedCount, setTotalApprovedCount] = useState(0);
   const [editCount, setEditCount] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [pdfPath, setPdfPath] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fetchDashboardCounts = async () => {
     try {
@@ -309,6 +345,35 @@ export default function DashboardPage() {
       setError("Failed to load publications");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+
+    const file = e.target.files[0];
+    const fileName = `${Date.now()}-${file.name}`;
+
+    try {
+      // Upload file to Supabase storage
+      const { data, error } = await supabase.storage
+        .from("articles")
+        .upload(fileName, file);
+
+      if (error) {
+        throw error;
+      }
+
+      // Get the public URL of the uploaded file
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("articles").getPublicUrl(fileName);
+
+      setPdfPath(publicUrl);
+      setUploadSuccess(true);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setUploadError("Failed to upload file. Please try again.");
     }
   };
 
