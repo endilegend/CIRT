@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
-import { writeFile } from "fs/promises";
-import { join } from "path";
+import { supabase } from "@/lib/supabase";
 import { sendReviewStatusEmail } from "@/lib/email";
 
 const prisma = new PrismaClient();
@@ -26,20 +25,51 @@ export async function POST(
       );
     }
 
-    // If a file was uploaded, save it
-    let pdf_path = undefined;
+    // Get the current article to check its PDF path
+    const currentArticle = await prisma.article.findUnique({
+      where: { id: articleIdNum },
+    });
+
+    if (!currentArticle) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    let pdf_path = currentArticle.pdf_path;
+
+    // If a file was uploaded, replace the existing one in Supabase storage
     if (file) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      // Convert the file to a Blob with the correct MIME type
+      const blob = new Blob([await file.arrayBuffer()], {
+        type: "application/pdf",
+      });
 
-      // Create a unique filename
-      const timestamp = Date.now();
-      const filename = `${articleIdNum}_${timestamp}.pdf`;
-      const uploadDir = join(process.cwd(), "public/uploads");
-      const filepath = join(uploadDir, filename);
+      // Extract the filename from the current PDF path or create a new one
+      const fileName =
+        currentArticle.pdf_path.split("/").pop() ||
+        `${articleIdNum}_${Date.now()}.pdf`;
 
-      await writeFile(filepath, buffer);
-      pdf_path = `uploads/${filename}`;
+      // Upload the new file to Supabase storage, replacing the existing one
+      const { error: uploadError } = await supabase.storage
+        .from("articles")
+        .upload(fileName, blob, {
+          upsert: true,
+          contentType: "application/pdf",
+        });
+
+      if (uploadError) {
+        console.error("Error uploading file to Supabase:", uploadError);
+        return NextResponse.json(
+          { error: "Failed to upload file" },
+          { status: 500 }
+        );
+      }
+
+      // Get the public URL of the uploaded file
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("articles").getPublicUrl(fileName);
+
+      pdf_path = publicUrl;
     }
 
     // Start a transaction to update both the review and article
