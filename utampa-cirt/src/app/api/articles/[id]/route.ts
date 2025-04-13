@@ -11,7 +11,18 @@ export async function GET(
     const { id } = await params;
     const article = await prisma.article.findUnique({
       where: { id: parseInt(id) },
-      include: { author: true, keywords: true },
+      include: {
+        author: true,
+        keywords: true,
+        reviews: {
+          include: {
+            reviewer: true,
+          },
+          orderBy: {
+            review_ID: "desc",
+          },
+        },
+      },
     });
 
     if (!article) {

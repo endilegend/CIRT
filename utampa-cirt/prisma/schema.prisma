@@ -42,13 +42,14 @@ model Keyword {
 }
 
 model Review {
-  review_ID   Int     @id @default(autoincrement())
+  review_ID   Int      @id @default(autoincrement())
   article_id  Int
   reviewerId  String
-  comments    String? @db.Text
+  comments    String?  @db.Text
+  createdAt   DateTime @default(now())
 
-  article     Article @relation("ArticleReviews", fields: [article_id], references: [id])
-  reviewer    User    @relation("UserReviews", fields: [reviewerId], references: [id])
+  article     Article  @relation("ArticleReviews", fields: [article_id], references: [id])
+  reviewer    User     @relation("UserReviews", fields: [reviewerId], references: [id])
 }
 
 enum Role {

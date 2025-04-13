@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { Article, User, Review, Status } from "@prisma/client";
+import { Article, User, Review, Status, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
 
 type ArticleWithAuthor = Article & {
@@ -188,46 +188,6 @@ export default function AuthorArticlePage({
                       View PDF
                     </Button>
                   </div>
-
-                  {article.status === "Reviewed" && (
-                    <>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <label className="block font-medium">
-                            Upload Revised Version
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            onChange={handleFileChange}
-                            className="block w-full text-sm text-gray-500
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded-md file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-slate-50 file:text-slate-700
-                              hover:file:bg-slate-100"
-                          />
-                          {uploadedFile && (
-                            <span className="text-sm text-green-600">
-                              {uploadedFile.name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4 pt-4">
-                        <Button
-                          onClick={handleResubmit}
-                          disabled={submitting || !uploadedFile}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700"
-                        >
-                          Resubmit Article
-                        </Button>
-                      </div>
-                    </>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -236,23 +196,72 @@ export default function AuthorArticlePage({
               <Card>
                 <CardHeader>
                   <CardTitle>Reviewer Comments</CardTitle>
+                  <CardDescription>
+                    Feedback from reviewers on your article
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {article.reviews.map((review, index) => (
-                      <div key={index} className="border-b pb-4 last:border-0">
-                        <div className="font-medium mb-2">
-                          Reviewer: {review.reviewer.f_name}{" "}
-                          {review.reviewer.l_name}
+                      <div key={index} className="border-b pb-6 last:border-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="font-medium">
+                            Reviewer: {review.reviewer.f_name}{" "}
+                            {review.reviewer.l_name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {review.createdAt
+                              ? new Date(review.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )
+                              : "No date available"}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600 mb-2">
-                          Status: {review.status?.replace("_", " ")}
-                        </div>
-                        <div className="bg-slate-50 p-4 rounded-md">
+                        <div className="bg-slate-50 p-4 rounded-md mt-2">
                           {review.comments}
                         </div>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {(article.status === "Reviewed" ||
+              article.status === "Under_Review" ||
+              article.status === "Declined") && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resubmit Article</CardTitle>
+                  <CardDescription>
+                    Upload a revised version of your article
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100"
+                    />
+                    <Button
+                      onClick={handleResubmit}
+                      disabled={!uploadedFile || submitting}
+                      className="w-full"
+                    >
+                      {submitting ? "Submitting..." : "Submit Updated Version"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

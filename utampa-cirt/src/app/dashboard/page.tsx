@@ -65,20 +65,22 @@ const myPublications = [
   },
 ];
 
-function getStatusClass(status: string) {
+const getStatusClass = (status: string) => {
   switch (status) {
-    case "Approved":
-      return "px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full";
-    case "Under Review":
-      return "px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full";
     case "Sent":
-      return "px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full";
+      return "bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-xs";
+    case "Under_Review":
+      return "bg-yellow-200 text-yellow-800 rounded-full px-2 py-1 text-xs";
+    case "Reviewed":
+      return "bg-orange-200 text-orange-800 rounded-full px-2 py-1 text-xs";
     case "Declined":
-      return "px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full";
+      return "bg-red-200 text-red-800 rounded-full px-2 py-1 text-xs";
+    case "Approved":
+      return "bg-green-200 text-green-800 rounded-full px-2 py-1 text-xs";
     default:
-      return "px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full";
+      return "bg-gray-200 text-gray-800 rounded-full px-2 py-1 text-xs";
   }
-}
+};
 
 // -----------------------------------------------------------------------------
 // DRAG & DROP COMPONENT
