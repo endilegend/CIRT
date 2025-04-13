@@ -12,6 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, User, Status } from "@prisma/client";
+import { supabase } from "@/lib/supabase";
 
 type ArticleWithAuthor = Article & {
   author: User;
@@ -82,7 +83,13 @@ export function ReviewForm({ articleId }: ReviewFormProps) {
     if (!article) return;
 
     try {
-      const response = await fetch(`/api/download/${article.pdf_path}`);
+      // If the pdf_path is already a full URL, use it directly
+      const pdfUrl = article.pdf_path.startsWith("http")
+        ? article.pdf_path
+        : supabase.storage.from("articles").getPublicUrl(article.pdf_path).data
+            .publicUrl;
+
+      const response = await fetch(pdfUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
