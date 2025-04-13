@@ -26,7 +26,9 @@ export default function HomePage() {
   // Track auth state so we can conditionally show buttons
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
-  const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<
+    ArticleWithRelations[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function HomePage() {
     const fetchArticles = async () => {
       try {
         const [articlesRes, featuredRes] = await Promise.all([
-          fetch("/api/articles"),
+          fetch("/api/articles/approved"),
           fetch("/api/articles/featured"),
         ]);
 
@@ -53,7 +55,7 @@ export default function HomePage() {
           featuredRes.json(),
         ]);
 
-        setArticles(articlesData || []);
+        setArticles(articlesData.articles || []);
         setFeaturedArticles(featuredData.articles || []);
       } catch (error) {
         console.error("Error fetching articles:", error);

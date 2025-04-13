@@ -61,6 +61,9 @@ export async function PUT(request: Request) {
     const updatedArticle = await prisma.article.update({
       where: { id: articleId },
       data: { featured },
+      include: {
+        author: true,
+      },
     });
 
     return NextResponse.json({ article: updatedArticle });

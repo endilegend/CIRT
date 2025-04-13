@@ -57,7 +57,9 @@ export default function ResultsPage() {
         setLoading(true);
         setError(null);
         const response = await fetch(
-          `/api/search?search=${encodeURIComponent(searchQuery)}`
+          `/api/search?search=${encodeURIComponent(
+            searchQuery
+          )}&status=Approved`
         );
         if (!response.ok) {
           throw new Error("Network response was not ok");

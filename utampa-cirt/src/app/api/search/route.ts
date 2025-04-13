@@ -1,69 +1,38 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Status } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get("search") || "";
+    const status = (searchParams.get("status") as Status) || Status.Approved;
 
-    if (!searchQuery.trim()) {
-      return NextResponse.json({ results: [] });
-    }
-
-    // Split the search query into individual terms
-    const searchTerms = searchQuery.toLowerCase().split(/\s+/);
-
-    const results = await prisma.article.findMany({
+    const articles = await prisma.article.findMany({
       where: {
-        OR: [
-          // Search in article title
+        AND: [
           {
-            paper_name: {
-              contains: searchQuery,
-              mode: "insensitive",
-            },
-          },
-          // Search in author names
-          {
-            author: {
-              OR: [
-                {
-                  f_name: {
-                    contains: searchQuery,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  l_name: {
-                    contains: searchQuery,
-                    mode: "insensitive",
-                  },
-                },
-                // Search for full name
-                {
-                  AND: searchTerms.map((term) => ({
-                    OR: [
-                      { f_name: { contains: term, mode: "insensitive" } },
-                      { l_name: { contains: term, mode: "insensitive" } },
-                    ],
-                  })),
-                },
-              ],
-            },
-          },
-          // Search in keywords
-          {
-            keywords: {
-              some: {
-                keyword: {
-                  contains: searchQuery,
-                  mode: "insensitive",
+            OR: [
+              { paper_name: { contains: searchQuery, mode: "insensitive" } },
+              {
+                author: {
+                  OR: [
+                    { f_name: { contains: searchQuery, mode: "insensitive" } },
+                    { l_name: { contains: searchQuery, mode: "insensitive" } },
+                  ],
                 },
               },
-            },
+              {
+                keywords: {
+                  some: {
+                    keyword: { contains: searchQuery, mode: "insensitive" },
+                  },
+                },
+              },
+            ],
           },
+          { status },
         ],
       },
       include: {
@@ -75,11 +44,11 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ results: articles });
   } catch (error) {
-    console.error("Search error:", error);
+    console.error("Error searching articles:", error);
     return NextResponse.json(
-      { error: "Error performing search" },
+      { error: "Failed to search articles" },
       { status: 500 }
     );
   }

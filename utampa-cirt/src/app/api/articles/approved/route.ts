@@ -3,21 +3,46 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const articles = await prisma.article.findMany({
-      where: {
-        status: "Approved",
-      },
-      include: {
-        author: true,
-      },
-      orderBy: {
-        createdAt: "desc",
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = 9;
+    const skip = (page - 1) * limit;
+
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where: {
+          status: "Approved",
+        },
+        include: {
+          author: true,
+          keywords: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: limit,
+        skip,
+      }),
+      prisma.article.count({
+        where: {
+          status: "Approved",
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      articles,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: total,
+        itemsPerPage: limit,
       },
     });
-
-    return NextResponse.json({ articles });
   } catch (error) {
     console.error("Error fetching approved articles:", error);
     return NextResponse.json(

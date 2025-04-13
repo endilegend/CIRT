@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,32 +66,32 @@ export default function SearchPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `/api/articles/latest?page=${currentPage}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch articles");
-        }
-        const data = await response.json();
-        setArticles(data.articles);
-        setTotalPages(data.pagination.totalPages);
-      } catch (error) {
-        console.error("Error fetching articles:", error);
-      } finally {
-        setLoading(false);
+  const fetchArticles = useCallback(async (page: number = 1) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/articles/approved?page=${page}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch articles");
       }
-    };
+      const data = await response.json();
+      setArticles(data.articles);
+      setTotalPages(data.pagination.totalPages);
+      setCurrentPage(data.pagination.currentPage);
+    } catch (error) {
+      console.error("Error fetching articles:", error);
+      setError("Failed to load articles");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
     fetchArticles();
-  }, [currentPage]);
+  }, [fetchArticles]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+      fetchArticles(newPage);
     }
   };
 
@@ -261,37 +262,19 @@ export default function SearchPage() {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="flex justify-center items-center gap-4 mt-8">
+                <div className="flex justify-center gap-2">
                   <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="flex items-center gap-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    Previous
                   </Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <Button
-                          key={page}
-                          variant={page === currentPage ? "default" : "outline"}
-                          onClick={() => handlePageChange(page)}
-                          className="w-10 h-10"
-                        >
-                          {page}
-                        </Button>
-                      )
-                    )}
-                  </div>
                   <Button
                     variant="outline"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="flex items-center gap-2"
                   >
-                    Next
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -303,6 +286,7 @@ export default function SearchPage() {
     </MainLayout>
   );
 }
+
 // Keywords requested by client
 const popularKeywords = [
   "Corrections",
