@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql" 
-  url      = "postgresql://postgres.thpwxsppkxnigxysuvpb:Cirt123@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -27,6 +27,7 @@ model Article {
   type       ArticleType?
   createdAt  DateTime  @default(now())
   views      Int       @default(0)
+  featured   Boolean   @default(false)
 
   author     User?     @relation(fields: [author_id], references: [id])
   keywords   Keyword[]

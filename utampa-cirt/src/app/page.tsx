@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { Article, User, Keyword } from "@prisma/client";
+import { Calendar, Users } from "lucide-react";
 
 type ArticleWithRelations = Article & {
   author: User | null;
@@ -25,6 +26,7 @@ export default function HomePage() {
   // Track auth state so we can conditionally show buttons
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [articles, setArticles] = useState<ArticleWithRelations[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,22 +37,34 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const fetchLatestArticles = async () => {
+    const fetchArticles = async () => {
       try {
-        const response = await fetch("/api/articles/latest");
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
+        const [articlesRes, featuredRes] = await Promise.all([
+          fetch("/api/articles"),
+          fetch("/api/articles/featured"),
+        ]);
+
+        if (!articlesRes.ok || !featuredRes.ok) {
+          throw new Error("Failed to fetch articles");
         }
-        const data = await response.json();
-        setArticles(data.articles || []);
+
+        const [articlesData, featuredData] = await Promise.all([
+          articlesRes.json(),
+          featuredRes.json(),
+        ]);
+
+        setArticles(articlesData || []);
+        setFeaturedArticles(featuredData.articles || []);
       } catch (error) {
-        console.error("Error fetching latest articles:", error);
+        console.error("Error fetching articles:", error);
+        setArticles([]);
+        setFeaturedArticles([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLatestArticles();
+    fetchArticles();
   }, []);
 
   return (
@@ -167,6 +181,56 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Featured Articles Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="ut-container">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Featured Articles</h2>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <p>Loading featured articles...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredArticles.slice(0, 6).map((article) => (
+                <Card key={article.id} className="overflow-hidden">
+                  <div className="flex flex-col md:flex-row">
+                    <div className="flex-grow p-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-1 bg-utred/10 text-utred text-xs rounded-full">
+                          {article.type || "Article"}
+                        </span>
+                        <span className="text-sm text-gray-500 flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(article.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <Link href={`/article/${article.id}`} className="group">
+                        <h3 className="text-xl font-semibold mb-2 group-hover:text-utred transition-colors">
+                          {article.paper_name}
+                        </h3>
+                      </Link>
+
+                      <div className="flex items-center text-gray-500 text-sm">
+                        <Users className="h-4 w-4 mr-1" />
+                        <span>
+                          {article.author
+                            ? `${article.author.f_name} ${article.author.l_name}`
+                            : "Unknown Author"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

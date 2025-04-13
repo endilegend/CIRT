@@ -4,8 +4,23 @@ import { NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
 export async function GET() {
-  const users = await prisma.article.findMany();
-  return Response.json(users);
+  try {
+    const articles = await prisma.article.findMany({
+      include: {
+        author: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return NextResponse.json(articles);
+  } catch (error) {
+    console.error("Error fetching articles:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch articles" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {

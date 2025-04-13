@@ -29,9 +29,12 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Article, User, Role } from "@prisma/client";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type ArticleWithAuthor = Article & {
   author: User;
+  featured: boolean;
 };
 
 type UserSuggestion = {
@@ -53,6 +56,9 @@ type UserWithRole = {
 export default function EditorPage() {
   const router = useRouter();
   const [articles, setArticles] = useState<ArticleWithAuthor[]>([]);
+  const [approvedArticles, setApprovedArticles] = useState<ArticleWithAuthor[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editorQueries, setEditorQueries] = useState<{ [key: string]: string }>(
@@ -75,14 +81,24 @@ export default function EditorPage() {
   }>({});
 
   useEffect(() => {
-    const fetchSentArticles = async () => {
+    const fetchArticles = async () => {
       try {
-        const response = await fetch("/api/articles/sent");
-        if (!response.ok) {
+        const [sentRes, approvedRes] = await Promise.all([
+          fetch("/api/articles/sent"),
+          fetch("/api/articles/approved"),
+        ]);
+
+        if (!sentRes.ok || !approvedRes.ok) {
           throw new Error("Failed to fetch articles");
         }
-        const data = await response.json();
-        setArticles(data.articles);
+
+        const [sentData, approvedData] = await Promise.all([
+          sentRes.json(),
+          approvedRes.json(),
+        ]);
+
+        setArticles(sentData.articles);
+        setApprovedArticles(approvedData.articles);
         setError(null);
       } catch (error) {
         console.error("Error fetching articles:", error);
@@ -92,7 +108,7 @@ export default function EditorPage() {
       }
     };
 
-    fetchSentArticles();
+    fetchArticles();
   }, []);
 
   const handleInputChange = async (id: number, value: string) => {
@@ -231,6 +247,64 @@ export default function EditorPage() {
           ? error.message
           : "Failed to update user role. Please try again."
       );
+    }
+  };
+
+  const handleToggleFeatured = async (articleId: number, featured: boolean) => {
+    try {
+      const response = await fetch("/api/articles/featured", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ articleId, featured }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        if (
+          response.status === 400 &&
+          data.error === "Maximum of 6 featured articles reached"
+        ) {
+          alert(
+            "Maximum of 6 featured articles reached. Please unfeature another article first."
+          );
+          return;
+        }
+        throw new Error("Failed to update featured status");
+      }
+
+      // Update both states
+      setArticles((prevArticles) =>
+        prevArticles.map((article) =>
+          article.id === articleId ? { ...article, featured } : article
+        )
+      );
+      setApprovedArticles((prevArticles) =>
+        prevArticles.map((article) =>
+          article.id === articleId ? { ...article, featured } : article
+        )
+      );
+    } catch (error) {
+      console.error("Error updating featured status:", error);
+      alert("Failed to update featured status. Please try again.");
+    }
+  };
+
+  const getStatusClass = (status: string | null) => {
+    switch (status) {
+      case "Sent":
+        return "bg-blue-200 text-blue-800";
+      case "Under_Review":
+        return "bg-yellow-200 text-yellow-800";
+      case "Reviewed":
+        return "bg-orange-200 text-orange-800";
+      case "Declined":
+        return "bg-red-200 text-red-800";
+      case "Approved":
+        return "bg-green-200 text-green-800";
+      default:
+        return "bg-gray-200 text-gray-800";
     }
   };
 
@@ -503,6 +577,123 @@ export default function EditorPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Featured Articles Management */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Featured Articles Management</CardTitle>
+              <CardDescription>
+                Select which articles should be featured on the home page
+                (Maximum 6)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Input
+                  placeholder="Search articles by title or author..."
+                  value={userSearchQuery}
+                  onChange={(e) => handleUserSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Author</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Featured</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {approvedArticles
+                      .filter(
+                        (article) =>
+                          article.paper_name
+                            .toLowerCase()
+                            .includes(userSearchQuery.toLowerCase()) ||
+                          `${article.author.f_name} ${article.author.l_name}`
+                            .toLowerCase()
+                            .includes(userSearchQuery.toLowerCase())
+                      )
+                      .map((article) => (
+                        <TableRow key={article.id}>
+                          <TableCell className="font-medium">
+                            {article.paper_name}
+                          </TableCell>
+                          <TableCell>
+                            {article.author.f_name} {article.author.l_name}
+                          </TableCell>
+                          <TableCell>
+                            <span className={getStatusClass(article.status)}>
+                              {article.status?.replace("_", " ")}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id={`featured-${article.id}`}
+                                checked={article.featured}
+                                onCheckedChange={(checked) =>
+                                  handleToggleFeatured(article.id, checked)
+                                }
+                              />
+                              <Label htmlFor={`featured-${article.id}`}>
+                                {article.featured ? "Featured" : "Not Featured"}
+                              </Label>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {approvedArticles.filter((article) => article.featured).length >
+                0 && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                  <h3 className="font-semibold mb-2">
+                    Currently Featured Articles (
+                    {
+                      approvedArticles.filter((article) => article.featured)
+                        .length
+                    }
+                    /6)
+                  </h3>
+                  <div className="space-y-2">
+                    {approvedArticles
+                      .filter((article) => article.featured)
+                      .map((article) => (
+                        <div
+                          key={article.id}
+                          className="flex items-center justify-between p-2 bg-white rounded border"
+                        >
+                          <div>
+                            <span className="font-medium">
+                              {article.paper_name}
+                            </span>
+                            <span className="text-gray-500 ml-2">
+                              by {article.author.f_name} {article.author.l_name}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleToggleFeatured(article.id, false)
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </MainLayout>
