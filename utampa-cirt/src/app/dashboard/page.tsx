@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { Article, Keyword } from "@prisma/client";
+import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
 
 // -----------------------------------------------------------------------------
@@ -303,6 +303,7 @@ export default function DashboardPage() {
   const [pdfPath, setPdfPath] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<Role | null>(null);
 
   const fetchDashboardCounts = async () => {
     try {
@@ -381,12 +382,21 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const auth = getAuth();
-
-    // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setAuthChecked(true);
 
       if (user) {
+        // Fetch user role
+        try {
+          const response = await fetch(`/api/user/role?userId=${user.uid}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          }
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
+
         fetchUserPublications(user.uid);
         fetchTotalApprovedCount();
         fetchDashboardCounts();
@@ -396,7 +406,6 @@ export default function DashboardPage() {
       }
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
   }, []);
 
@@ -429,6 +438,7 @@ export default function DashboardPage() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {/* My Publications Card - Visible to all roles */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">
@@ -455,58 +465,65 @@ export default function DashboardPage() {
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">
-                  Review Submissions
-                </CardTitle>
-                <BookOpen className="h-5 w-5 text-utred" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{reviewCount}</div>
-                <p className="text-sm text-gray-600">
-                  Articles assigned to you for review
-                </p>
-                <br></br>
-              </CardContent>
-              <CardFooter>
-                <Link href="/dashboard/review">
-                  <Button
-                    variant="ghost"
-                    className="text-utred hover:text-utred-dark"
-                  >
-                    View Submissions
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
+            {/* Review Submissions Card - Visible to Editor and Reviewer */}
+            {(userRole === "Editor" || userRole === "Reviewer") && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg font-medium">
+                    Review Submissions
+                  </CardTitle>
+                  <BookOpen className="h-5 w-5 text-utred" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{reviewCount}</div>
+                  <p className="text-sm text-gray-600">
+                    Articles assigned to you for review
+                  </p>
+                  <br></br>
+                </CardContent>
+                <CardFooter>
+                  <Link href="/dashboard/review">
+                    <Button
+                      variant="ghost"
+                      className="text-utred hover:text-utred-dark"
+                    >
+                      View Submissions
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            )}
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">
-                  Edit Submissions
-                </CardTitle>
-                <AreaChart className="h-5 w-5 text-utred" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{editCount}</div>
-                <p className="text-sm text-gray-600">
-                  Articles waiting for editor review
-                </p>
-                <br></br>
-              </CardContent>
-              <CardFooter>
-                <Link href="/dashboard/editor">
-                  <Button
-                    variant="ghost"
-                    className="text-utred hover:text-utred-dark"
-                  >
-                    View Submissions
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
+            {/* Edit Submissions Card - Visible to Editor and Reviewer */}
+            {(userRole === "Editor" || userRole === "Reviewer") && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg font-medium">
+                    Edit Submissions
+                  </CardTitle>
+                  <AreaChart className="h-5 w-5 text-utred" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{editCount}</div>
+                  <p className="text-sm text-gray-600">
+                    Articles waiting for editor review
+                  </p>
+                  <br></br>
+                </CardContent>
+                <CardFooter>
+                  <Link href="/dashboard/editor">
+                    <Button
+                      variant="ghost"
+                      className="text-utred hover:text-utred-dark"
+                    >
+                      View Submissions
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            )}
 
+            {/* Database Status Card - Visible to all roles */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg font-medium">
