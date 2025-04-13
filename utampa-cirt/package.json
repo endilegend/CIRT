@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "copy-pdf-worker": "node scripts/copy-pdf-worker.js",
-    "postinstall": "npm run copy-pdf-worker"
+    "postinstall": "prisma generate && npm run copy-pdf-worker"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
