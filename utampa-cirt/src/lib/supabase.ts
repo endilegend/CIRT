@@ -8,7 +8,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // Test database connection
 export async function testConnection() {
   try {
-    const { data, error } = await supabase.from("article").select("*").limit(1);
+    const { data, error } = await supabase.from("Article").select("*").limit(1);
 
     if (error) throw error;
     return { success: true, data };
