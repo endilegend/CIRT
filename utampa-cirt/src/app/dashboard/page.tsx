@@ -92,7 +92,26 @@ interface DragDropFileProps {
 
 function DragDropFile({ onFileSelect }: DragDropFileProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const validateFile = (file: File): boolean => {
+    // Check file type
+    if (file.type !== "application/pdf") {
+      setError("Only PDF files are allowed");
+      return false;
+    }
+
+    // Check file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      setError("File size must be less than 50MB");
+      return false;
+    }
+
+    setError(null);
+    return true;
+  };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -108,7 +127,10 @@ function DragDropFile({ onFileSelect }: DragDropFileProps) {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileSelect(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (validateFile(file)) {
+        onFileSelect(file);
+      }
     }
   };
 
@@ -120,7 +142,10 @@ function DragDropFile({ onFileSelect }: DragDropFileProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileSelect(e.target.files[0]);
+      const file = e.target.files[0];
+      if (validateFile(file)) {
+        onFileSelect(file);
+      }
     }
   };
 
@@ -145,6 +170,7 @@ function DragDropFile({ onFileSelect }: DragDropFileProps) {
         <FileUp className="h-10 w-10 text-gray-400" />
         <p className="text-lg font-medium mb-1">Drag and drop your PDF here</p>
         <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
     </div>
   );
@@ -156,9 +182,10 @@ function DragDropFile({ onFileSelect }: DragDropFileProps) {
 
 interface UploadFormProps {
   file: File | null;
+  onUploadSuccess?: (userId: string) => void;
 }
 
-function UploadForm({ file }: UploadFormProps) {
+function UploadForm({ file, onUploadSuccess }: UploadFormProps) {
   const [paperName, setPaperName] = useState("");
   const [type, setType] = useState("Article");
   const [keywords, setKeywords] = useState("");
@@ -172,11 +199,16 @@ function UploadForm({ file }: UploadFormProps) {
       return;
     }
 
+    if (!paperName.trim()) {
+      setUploadError("Please enter a name for your article");
+      return;
+    }
+
     // Get the current Firebase user and ensure they're authenticated
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) {
-      alert("User not authenticated");
+      setUploadError("You must be logged in to upload articles");
       return;
     }
 
@@ -184,46 +216,51 @@ function UploadForm({ file }: UploadFormProps) {
     setUploadError(null);
 
     try {
-      // Upload file to Supabase storage
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("articles")
-        .upload(fileName, file);
+      // Get the Firebase ID token
+      const token = await user.getIdToken();
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      // Create FormData object
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("name", paperName.trim());
+      formData.append("type", type);
+      formData.append("keywords", keywords);
 
-      // Get the public URL of the uploaded file
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("articles").getPublicUrl(fileName);
-
-      // Create article in database with Supabase URL
-      const response = await fetch("/api/articles", {
+      // Upload using the API endpoint
+      const response = await fetch("/api/upload", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          paper_name: paperName,
-          type,
-          keywords: keywords.split(",").map((k) => k.trim()),
-          author_id: user.uid,
-          pdf_path: publicUrl,
-        }),
+        body: formData,
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create article");
+        throw new Error(
+          data.error || data.details || "Failed to upload article"
+        );
       }
 
-      alert("Upload successful!");
-      // Reset form
-      setPaperName("");
-      setType("Article");
-      setKeywords("");
+      if (data.success) {
+        alert("Upload successful!");
+        // Reset form
+        setPaperName("");
+        setType("Article");
+        setKeywords("");
+        // Close the dialog by triggering a click on the close button
+        const closeButton = document.querySelector("[data-dialog-close]");
+        if (closeButton instanceof HTMLElement) {
+          closeButton.click();
+        }
+        // Refresh the publications list
+        if (onUploadSuccess) {
+          onUploadSuccess(user.uid);
+        }
+      } else {
+        throw new Error("Upload failed - please try again");
+      }
     } catch (err) {
       console.error("Upload failed:", err);
       setUploadError(
@@ -565,7 +602,7 @@ export default function DashboardPage() {
               </CardContent>
               <CardFooter className="flex justify-between">
                 <div className="text-sm text-gray-500">
-                  Maximum file size: 10MB
+                  Maximum file size: 50MB
                 </div>
                 <Dialog>
                   <DialogTrigger asChild>
@@ -584,7 +621,10 @@ export default function DashboardPage() {
                         Provide metadata for your publication
                       </DialogDescription>
                     </DialogHeader>
-                    <UploadForm file={selectedFile} />
+                    <UploadForm
+                      file={selectedFile}
+                      onUploadSuccess={fetchUserPublications}
+                    />
                   </DialogContent>
                 </Dialog>
               </CardFooter>

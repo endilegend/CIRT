@@ -1,171 +1,151 @@
-import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import formidable, { File, Fields, Files } from "formidable";
-import { Readable } from "stream";
-import { IncomingMessage } from "http";
-export const runtime = "nodejs";
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import admin from "firebase-admin";
+import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
-const uploadDir = path.join(process.cwd(), "public", "pdfs");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+import { ArticleType } from "@prisma/client";
+
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
 }
 
-export async function POST(req: Request) {
-  // 1) Read the entire request body into an ArrayBuffer
-  const reqBuffer = await req.arrayBuffer();
+export async function POST(request: NextRequest) {
+  try {
+    // Verify environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // 2) Convert that ArrayBuffer into a Node.js Readable stream
-  const nodeStream = new Readable();
-  nodeStream.push(Buffer.from(reqBuffer));
-  nodeStream.push(null);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
 
-  // 3) Create a plain headers object from the Next.js Request headers
-  const headers = Object.fromEntries(req.headers.entries());
-
-  // 4) Attach the headers to the stream to mimic an IncomingMessage
-  const incoming = nodeStream as unknown as IncomingMessage;
-  (incoming as any).headers = headers;
-
-  return new Promise((resolve) => {
-    const form = formidable({
-      uploadDir,
-      keepExtensions: true,
-      maxFileSize: 500 * 1024 * 1024,
+    // Initialize Supabase client with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     });
 
-    form.parse(incoming, async (err: unknown, fields: Fields, files: Files) => {
-      if (err) {
-        console.error("Error parsing form data:", err);
-        return resolve(
-          NextResponse.json(
-            { error: "Error parsing form data" },
-            { status: 500 }
-          )
-        );
-      }
+    // Get Firebase token from Authorization header
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Missing or invalid authorization token" },
+        { status: 401 }
+      );
+    }
 
-      // Retrieve the uploaded file
-      const fileKey = Object.keys(files)[0];
-      if (!fileKey) {
-        return resolve(
-          NextResponse.json({ error: "No file field found" }, { status: 400 })
-        );
-      }
+    const token = authHeader.split("Bearer ")[1];
 
-      const fileData = files[fileKey];
-      const uploadedFile = Array.isArray(fileData) ? fileData[0] : fileData;
-      if (!uploadedFile) {
-        return resolve(
-          NextResponse.json({ error: "No file uploaded" }, { status: 400 })
-        );
-      }
+    // Verify Firebase token
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userId = decodedToken.uid;
 
-      const file = uploadedFile as File;
-      // Convert fields to strings if they're arrays
-      const paper_name = Array.isArray(fields.name)
-        ? fields.name[0]
-        : fields.name || file.originalFilename || file.newFilename;
-      const articleType = Array.isArray(fields.type)
-        ? fields.type[0]
-        : fields.type || "Article";
-      const status = "Sent";
+    // Parse form data
+    const formData = await request.formData();
+    const uploadedFile = formData.get("file") as File;
+    const paper_name = formData.get("name") as string;
+    const type = formData.get("type") as ArticleType;
+    const keywords = formData.get("keywords") as string;
 
-      const oldPath = file.filepath;
-      const fileName = file.originalFilename || file.newFilename;
-      const newPath = path.join(uploadDir, fileName);
+    if (!uploadedFile || !paper_name || !type) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-      try {
-        fs.renameSync(oldPath, newPath);
-      } catch (renameError) {
-        console.error("Error moving file:", renameError);
-        return resolve(
-          NextResponse.json({ error: "Error saving file" }, { status: 500 })
-        );
-      }
+    // Generate unique filename
+    const fileExtension = uploadedFile.name.split(".").pop();
+    const uniqueFilename = `${uuidv4()}.${fileExtension}`;
+    const filePath = `${userId}/${uniqueFilename}`;
 
-      // Use the firebase userID passed in the form as "author_id"
-      const author_id = Array.isArray(fields.author_id)
-        ? fields.author_id[0]
-        : fields.author_id?.toString() || null;
+    // Convert file to buffer
+    const fileArrayBuffer = await uploadedFile.arrayBuffer();
+    const fileBuffer = Buffer.from(fileArrayBuffer);
 
-      // Upsert user record to satisfy the foreign key constraint, if author_id is provided.
-      if (author_id) {
-        try {
-          await prisma.user.upsert({
-            where: { id: author_id },
-            update: {},
-            create: {
-              id: author_id,
-              f_name: "Unknown",
-              l_name: "Unknown",
-              email: "unknown@example.com",
-              user_role: "Author",
-            },
-          });
-        } catch (userError) {
-          console.error("Error upserting user:", userError);
-          return resolve(
-            NextResponse.json(
-              { error: "Error upserting user" },
-              { status: 500 }
-            )
-          );
-        }
-      }
+    // Upload file to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from("articles")
+      .upload(filePath, fileBuffer, {
+        contentType: "application/pdf",
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-      // Handle keywords from the form.
-      let keywordArray: string[] = [];
-      if (fields.keywords) {
-        if (typeof fields.keywords === "string") {
-          keywordArray = fields.keywords
-            .split(",")
-            .map((k) => k.trim())
-            .filter((k) => k !== "");
-        } else if (Array.isArray(fields.keywords)) {
-          keywordArray = fields.keywords
-            .map((item) => (typeof item === "string" ? item : ""))
-            .join(",")
-            .split(",")
-            .map((k) => k.trim())
-            .filter((k) => k !== "");
-        }
-      }
+    if (uploadError) {
+      console.error("Storage upload error:", uploadError);
+      return NextResponse.json(
+        {
+          error: "Failed to upload file to storage",
+          details: uploadError.message,
+        },
+        { status: 500 }
+      );
+    }
 
-      try {
-        // Create the Article record along with nested Keyword records
-        const createdArticle = await prisma.article.create({
-          data: {
-            paper_name,
-            pdf_path: `/pdfs/${fileName}`,
-            author_id,
-            type: articleType,
-            status,
-            keywords: {
-              create: keywordArray.map((keyword) => ({ keyword })),
-            },
+    // Get the public URL for the uploaded file
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("articles").getPublicUrl(filePath);
+
+    // Create article record using Prisma
+    try {
+      const article = await prisma.article.create({
+        data: {
+          paper_name,
+          type,
+          author_id: userId,
+          pdf_path: publicUrl,
+          status: "Sent",
+          keywords: {
+            create: keywords.split(",").map((keyword) => ({
+              keyword: keyword.trim(),
+            })),
           },
-        });
+        },
+        include: {
+          keywords: true,
+        },
+      });
 
-        return resolve(
-          NextResponse.json({ success: true, article: createdArticle })
-        );
-      } catch (dbError) {
-        console.error("Error saving to database:", dbError);
-        return resolve(
-          NextResponse.json(
-            { error: "Error saving to database" },
-            { status: 500 }
-          )
-        );
-      }
-    });
-  });
+      return NextResponse.json({ success: true, article });
+    } catch (dbError) {
+      console.error("Database insert error:", dbError);
+      // If database insert fails, clean up the uploaded file
+      await supabase.storage.from("articles").remove([filePath]);
+      return NextResponse.json(
+        {
+          error: "Failed to save article details",
+          details:
+            dbError instanceof Error
+              ? dbError.message
+              : "Unknown database error",
+        },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error("Upload process error:", error);
+    return NextResponse.json(
+      {
+        error: "Error processing upload",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }
