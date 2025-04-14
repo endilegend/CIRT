@@ -8,10 +8,14 @@ export async function GET() {
     // ✅ Test basic connection
     await prisma.$connect();
 
-    // ✅ Try reading 1 row from each table
-    const user = await prisma.user.findFirst();
-    const article = await prisma.article.findFirst();
-    const review = await prisma.review.findFirst();
+    // ✅ Query all tables concurrently
+    const [user, article, review] = await Promise.all([
+      prisma.user.findFirst(),
+      prisma.article.findFirst(),
+      prisma.review.findFirst(),
+    ]);
+
+    console.log("✅ DB Test Successful:", { user, article, review });
 
     return NextResponse.json({
       success: true,
