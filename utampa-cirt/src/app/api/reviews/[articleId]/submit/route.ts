@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Status } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { Status } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
 import { sendReviewStatusEmail } from "@/lib/email";
 export const runtime = "nodejs";
-const prisma = new PrismaClient();
 
 export async function POST(
   request: Request,

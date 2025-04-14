@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 export const runtime = "nodejs";
-const prisma = new PrismaClient();
 
 export async function PUT(
   request: Request,

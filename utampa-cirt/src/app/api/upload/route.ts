@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
 import formidable, { File, Fields, Files } from "formidable";
@@ -13,7 +12,7 @@ export const config = {
   },
 };
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 const uploadDir = path.join(process.cwd(), "public", "pdfs");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
