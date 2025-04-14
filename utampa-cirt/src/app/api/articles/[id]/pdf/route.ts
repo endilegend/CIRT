@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { supabase } from "@/lib/supabase";
-
+export const runtime = "nodejs";
 const prisma = new PrismaClient();
 
 // Helper function to get file path from full URL

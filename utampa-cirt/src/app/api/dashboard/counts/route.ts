@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient, Status } from "@prisma/client";
 import { adminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
-
+export const runtime = "nodejs";
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {

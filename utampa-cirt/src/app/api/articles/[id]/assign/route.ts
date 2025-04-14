@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Role } from "@prisma/client";
 export const dynamic = "force-dynamic";
-
+export const runtime = "nodejs";
 const prisma = new PrismaClient();
-
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
