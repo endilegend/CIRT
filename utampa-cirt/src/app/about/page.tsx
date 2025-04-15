@@ -294,7 +294,7 @@ export default function AboutPage() {
             collaborations? We'd love to hear from you.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Link href="/contact">
+            <Link href="https://www.ut.edu/academics/college-of-social-sciences-mathematics-and-education/criminology-and-criminal-justice-degrees/criminology-institute-for-research-and-training-">
               <Button className="bg-white text-utred hover:bg-gray-100 py-2 px-6 rounded-md text-lg">
                 Contact Us
               </Button>
