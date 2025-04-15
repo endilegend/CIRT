@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 import { prisma } from "@/lib/prisma";
 
 // Helper function to get file path from full URL
 function getFilePathFromUrl(url: string): string {
   try {
-    // Extract the filename from the full URL
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/");
-    return pathParts[pathParts.length - 1];
+    // Remove 'storage/v1/object/public/articles/' from the path
+    const relevantPath = pathParts
+      .slice(pathParts.indexOf("articles") + 1)
+      .join("/");
+    return relevantPath;
   } catch (e) {
-    // If the URL parsing fails, assume it's just a filename
+    console.error("Error parsing URL:", e);
     return url;
   }
 }
@@ -51,6 +54,26 @@ export async function GET(
         }
       );
     }
+
+    // Initialize Supabase client with service role key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
 
     // Log the path for debugging
     console.log("PDF path from DB:", article.pdf_path);
