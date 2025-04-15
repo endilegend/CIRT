@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@prisma/client";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { sendReviewStatusEmail } from "@/lib/email";
 export const runtime = "nodejs";
 
@@ -28,6 +28,9 @@ export async function POST(
     // Get the current article to check its PDF path
     const currentArticle = await prisma.article.findUnique({
       where: { id: articleIdNum },
+      include: {
+        author: true,
+      },
     });
 
     if (!currentArticle) {
@@ -38,40 +41,61 @@ export async function POST(
 
     // If a file was uploaded, replace the existing one in Supabase storage
     if (file) {
-      // Convert the file to a Blob with the correct MIME type
-      const blob = new Blob([await file.arrayBuffer()], {
-        type: "application/pdf",
+      // Initialize Supabase client with service role key
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error("Missing Supabase environment variables");
+        return NextResponse.json(
+          { error: "Server configuration error" },
+          { status: 500 }
+        );
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
       });
 
-      // Extract the filename from the current PDF path or create a new one
-      const fileName =
-        currentArticle.pdf_path.split("/").pop() ||
-        `${articleIdNum}_${Date.now()}.pdf`;
+      // Convert the file to a buffer
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-      // Add a version parameter to the filename to prevent caching
-      const versionedFileName = `${fileName.split(".")[0]}_v${Date.now()}.pdf`;
+      // Extract the original file path from the current PDF path
+      const originalPath = currentArticle.pdf_path
+        .split("/storage/v1/object/public/articles/")
+        .pop();
+      if (!originalPath) {
+        return NextResponse.json(
+          { error: "Invalid file path format" },
+          { status: 400 }
+        );
+      }
 
       // Upload the new file to Supabase storage, replacing the existing one
       const { error: uploadError } = await supabase.storage
         .from("articles")
-        .upload(versionedFileName, blob, {
+        .upload(originalPath, fileBuffer, {
           upsert: true,
           contentType: "application/pdf",
-          cacheControl: "no-cache, no-store, must-revalidate",
+          cacheControl: "3600",
         });
 
       if (uploadError) {
         console.error("Error uploading file to Supabase:", uploadError);
         return NextResponse.json(
-          { error: "Failed to upload file" },
+          { error: "Failed to upload file", details: uploadError },
           { status: 500 }
         );
       }
 
-      // Get the public URL of the uploaded file with cache control
+      // Get the public URL of the uploaded file
       const {
         data: { publicUrl },
-      } = supabase.storage.from("articles").getPublicUrl(versionedFileName);
+      } = supabase.storage.from("articles").getPublicUrl(originalPath);
 
       pdf_path = publicUrl;
     }
@@ -108,18 +132,15 @@ export async function POST(
           status: status,
           ...(pdf_path ? { pdf_path: pdf_path } : {}),
         },
-        include: {
-          author: true,
-        },
       }),
     ]);
 
     // Send email notification to the author if author exists
-    if (article.author) {
+    if (currentArticle.author) {
       try {
         await sendReviewStatusEmail(
-          article.author.email,
-          article.paper_name,
+          currentArticle.author.email,
+          currentArticle.paper_name,
           status,
           comments
         );
@@ -133,7 +154,10 @@ export async function POST(
   } catch (error) {
     console.error("Error submitting review:", error);
     return NextResponse.json(
-      { error: "Failed to submit review" },
+      {
+        error: "Failed to submit review",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@prisma/client";
 import { adminAuth } from "@/lib/firebase-admin";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(
   request: NextRequest,
@@ -23,7 +23,28 @@ export async function POST(
     const decodedToken = await adminAuth.verifyIdToken(token);
     const userId = decodedToken.uid;
 
-    const articleId = parseInt(params.id);
+    // Initialize Supabase client with service role key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing Supabase environment variables");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+
+    const { id } = params;
+    const articleId = parseInt(id);
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const status = formData.get("status") as Status;
@@ -54,39 +75,41 @@ export async function POST(
       );
     }
 
-    // Convert the file to a Blob with the correct MIME type
-    const blob = new Blob([await file.arrayBuffer()], {
-      type: "application/pdf",
-    });
+    // Convert the file to a buffer
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    // Extract the filename from the current PDF path or create a new one
-    const fileName =
-      article.pdf_path.split("/").pop() || `${articleId}_${Date.now()}.pdf`;
-
-    // Add a version parameter to the filename to prevent caching
-    const versionedFileName = `${fileName.split(".")[0]}_v${Date.now()}.pdf`;
+    // Extract the original file path from the current PDF path
+    const originalPath = article.pdf_path
+      .split("/storage/v1/object/public/articles/")
+      .pop();
+    if (!originalPath) {
+      return NextResponse.json(
+        { error: "Invalid file path format" },
+        { status: 400 }
+      );
+    }
 
     // Upload the new file to Supabase storage, replacing the existing one
     const { error: uploadError } = await supabase.storage
       .from("articles")
-      .upload(versionedFileName, blob, {
+      .upload(originalPath, fileBuffer, {
         upsert: true,
         contentType: "application/pdf",
-        cacheControl: "no-cache, no-store, must-revalidate",
+        cacheControl: "3600",
       });
 
     if (uploadError) {
       console.error("Error uploading file to Supabase:", uploadError);
       return NextResponse.json(
-        { error: "Failed to upload file" },
+        { error: "Failed to upload file", details: uploadError },
         { status: 500 }
       );
     }
 
-    // Get the public URL of the uploaded file with cache control
+    // Get the public URL of the uploaded file
     const {
       data: { publicUrl },
-    } = supabase.storage.from("articles").getPublicUrl(versionedFileName);
+    } = supabase.storage.from("articles").getPublicUrl(originalPath);
 
     // Update the article with new PDF and status
     const updatedArticle = await prisma.article.update({
@@ -103,7 +126,10 @@ export async function POST(
   } catch (error) {
     console.error("Error resubmitting article:", error);
     return NextResponse.json(
-      { error: "Failed to resubmit article" },
+      {
+        error: "Failed to resubmit article",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
