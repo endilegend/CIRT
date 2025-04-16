@@ -324,7 +324,7 @@ export default function EditorPage() {
 
       if (!userId) {
         setError("No user ID found. Please log in.");
-        router.push("/login"); // Or redirect accordingly
+        router.push("/register"); // Or redirect accordingly
         return;
       }
 
@@ -335,14 +335,14 @@ export default function EditorPage() {
 
       if (response.ok) {
         if (data.role !== "Editor") {
-          router.push("/forbidden");
+          router.push("/register");
         }
       } else {
         setError(data.error || "Something went wrong.");
       }
     } catch (err) {
       setError("Failed to verify role.");
-      router.push("/")
+      router.push("/register")
       console.error(err);
     } finally {
       setLoading(false);
