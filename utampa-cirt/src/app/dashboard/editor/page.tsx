@@ -328,7 +328,7 @@ export default function EditorPage() {
         return;
       }
 
-      const response = await fetch(`/api/user/${userId}/role`);
+      const response = await fetch(`/api/user/role`);
       const data = await response.json();
 
       console.log("User role:", data.role);
