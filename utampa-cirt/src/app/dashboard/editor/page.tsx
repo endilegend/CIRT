@@ -328,13 +328,13 @@ export default function EditorPage() {
         return;
       }
 
-      // const response = await fetch(`/api/your-role-endpoint?userId=${userId}`);
-      // const data = await response.json();
+      const response = await fetch(`/api/users/${userId}/role`);
+      const data = await response.json();
 
-      console.log("User role:", data);
+      console.log("User role:", data.role);
 
       if (response.ok) {
-        if (user.user_role !== "Editor") {
+        if (data.role !== "Editor") {
           router.push("/register");
         }
       } else {
