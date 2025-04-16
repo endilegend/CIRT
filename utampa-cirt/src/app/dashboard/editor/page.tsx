@@ -317,6 +317,30 @@ export default function EditorPage() {
     fetchUsers(1);
   }, []);
 
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        // Fetch user role from backend
+        const response = await fetch("/api/your-endpoint"); // Replace with actual endpoint
+        const data = await response.json();
+
+        if (response.ok) {
+          // If the user is not an editor, redirect them to a "Forbidden" or login page
+          if (data.userRole !== "Editor") {
+            router.push("/forbidden");  // Redirect to the forbidden page
+          }
+        } else {
+          // Handle error cases
+          setError(data.error || "Something went wrong.");
+        }
+      } catch (err) {
+        setError("Failed to verify role.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
   return (
     <MainLayout isAuthenticated={true}>
       <div className="bg-slate-50 py-8 min-h-screen">
