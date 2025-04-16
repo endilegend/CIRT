@@ -328,7 +328,7 @@ export default function EditorPage() {
         return;
       }
 
-      const response = await fetch(`/api/user/role`);
+      const response = await fetch(`/api/user/role?userId=${userId}`);
       const data = await response.json();
 
       console.log("User role:", data.role);
@@ -350,7 +350,7 @@ export default function EditorPage() {
   };
 
   checkUserRole();
-}, [router]);
+  }, [router]);
 
   return (
     <MainLayout isAuthenticated={true}>
