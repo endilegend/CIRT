@@ -321,7 +321,7 @@ export default function EditorPage() {
     const checkUserRole = async () => {
       try {
         // Fetch user role from backend
-        const response = await fetch("/api/your-endpoint"); // Replace with actual endpoint
+        const response = await fetch("/api/user/${userId}");
         const data = await response.json();
 
         if (response.ok) {
