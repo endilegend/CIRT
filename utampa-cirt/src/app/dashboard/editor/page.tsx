@@ -335,7 +335,7 @@ export default function EditorPage() {
 
       if (response.ok) {
         if (data.role !== "Editor") {
-          router.push("/register");
+          // router.push("/register");
         }
       } else {
         setError(data.error || "Something went wrong.");
