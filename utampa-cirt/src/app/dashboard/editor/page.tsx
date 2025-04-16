@@ -342,6 +342,7 @@ export default function EditorPage() {
       }
     } catch (err) {
       setError("Failed to verify role.");
+      router.push("/")
       console.error(err);
     } finally {
       setLoading(false);
