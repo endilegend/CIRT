@@ -335,14 +335,14 @@ export default function EditorPage() {
 
       if (response.ok) {
         if (data.role !== "Editor") {
-          router.push("/register");
+          router.push("/dashboard");
         }
       } else {
         setError(data.error || "Something went wrong.");
       }
     } catch (err) {
       setError("Failed to verify role.");
-      router.push("/register")
+      router.push("/dashboard")
       console.error(err);
     } finally {
       setLoading(false);
