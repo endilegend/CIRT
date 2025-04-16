@@ -318,31 +318,38 @@ export default function EditorPage() {
   }, []);
 
   useEffect(() => {
-    const checkUserRole = async () => {
-      try {
-        // Fetch user role from backend
-        const response = await fetch("/api/user/${userId}");
-        const data = await response.json();
+  const checkUserRole = async () => {
+    try {
+      const userId = localStorage.getItem("userId"); // Adjust based on where you store it
 
-        if (response.ok) {
-          // If the user is not an editor, redirect them to a "Forbidden" or login page
-          if (data.userRole !== "Editor") {
-            router.push("/forbidden");  // Redirect to the forbidden page
-          }
-        } else {
-          // Handle error cases
-          setError(data.error || "Something went wrong.");
-        }
-      } catch (err) {
-        setError("Failed to verify role.");
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (!userId) {
+        setError("No user ID found. Please log in.");
+        router.push("/login"); // Or redirect accordingly
+        return;
       }
-    };
 
-    checkUserRole();
-  }, [router]);
+      const response = await fetch(`/api/your-role-endpoint?userId=${userId}`);
+      const data = await response.json();
+
+      console.log("User role:", data);
+
+      if (response.ok) {
+        if (data.role !== "Editor") {
+          router.push("/forbidden");
+        }
+      } else {
+        setError(data.error || "Something went wrong.");
+      }
+    } catch (err) {
+      setError("Failed to verify role.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  checkUserRole();
+}, [router]);
 
   return (
     <MainLayout isAuthenticated={true}>
