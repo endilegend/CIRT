@@ -341,6 +341,9 @@ export default function EditorPage() {
       }
     };
 
+    checkUserRole();
+  }, [router]);
+
   return (
     <MainLayout isAuthenticated={true}>
       <div className="bg-slate-50 py-8 min-h-screen">
