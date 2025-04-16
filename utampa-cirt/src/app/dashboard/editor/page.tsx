@@ -319,14 +319,14 @@ export default function EditorPage() {
 
   useEffect(() => {
   const checkUserRole = async () => {
-    // try {
-    //   const userId = localStorage.getItem("userId"); // Adjust based on where you store it
+    try {
+      const userId = localStorage.getItem("userId"); // Adjust based on where you store it
 
-    //   if (!userId) {
-    //     setError("No user ID found. Please log in.");
-    //     router.push("/register"); // Or redirect accordingly
-    //     return;
-    //   }
+      if (!userId) {
+        setError("No user ID found. Please log in.");
+        router.push("/register"); // Or redirect accordingly
+        return;
+      }
 
       const response = await fetch(`/api/users/${userId}/role`);
       const data = await response.json();
@@ -335,7 +335,7 @@ export default function EditorPage() {
 
       if (response.ok) {
         if (data.role !== "Editor") {
-          // router.push("/register");
+          router.push("/register");
         }
       } else {
         setError(data.error || "Something went wrong.");
