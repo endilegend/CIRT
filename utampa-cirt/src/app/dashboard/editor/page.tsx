@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -316,17 +317,20 @@ export default function EditorPage() {
   useEffect(() => {
     fetchUsers(1);
   }, []);
-
   useEffect(() => {
   const checkUserRole = async () => {
     try {
-      const userId = localStorage.getItem("userId"); // Adjust based on where you store it
+      const auth = getAuth();
+      const user = auth.currentUser;
+      // const userId = localStorage.getItem("userId"); // Adjust based on where you store it
 
-      if (!userId) {
+      if (!user) {
         setError("No user ID found. Please log in.");
         router.push("/register"); // Or redirect accordingly
         return;
       }
+
+      const userId = user.uid;
 
       const response = await fetch(`/api/user/role?userId=${userId}`);
       const data = await response.json();
