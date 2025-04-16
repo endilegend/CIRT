@@ -531,8 +531,8 @@ export default function DashboardPage() {
               </Card>
             )}
 
-            {/* Edit Submissions Card - Visible to Editor and Reviewer */}
-            {(userRole === "Editor" || userRole === "Reviewer") && (
+            {/* Edit Submissions Card - Visible to Editor */}
+            {(userRole === "Editor") && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-lg font-medium">
