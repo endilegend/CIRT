@@ -317,12 +317,11 @@ export default function EditorPage() {
   useEffect(() => {
     fetchUsers(1);
   }, []);
-  useEffect(() => {
+
   const checkUserRole = async () => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
-      // const userId = localStorage.getItem("userId"); // Adjust based on where you store it
 
       if (!user) {
         setError("No user ID found. Please log in.");
@@ -353,7 +352,8 @@ export default function EditorPage() {
     }
   };
 
-  checkUserRole();
+  useEffect(() => {
+    checkUserRole();
   }, [router]);
 
   return (
