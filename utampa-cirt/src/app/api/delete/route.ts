@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const articleIds: number[] | undefined = body.articleIds;
     const emails: string[] | undefined = body.emails;
+    const deleteUserArticles: boolean = body.deleteUserArticles ?? false;
 
     // ✅ Delete by article IDs
     if (articleIds && Array.isArray(articleIds) && articleIds.length > 0) {
@@ -37,29 +38,31 @@ export async function POST(request: NextRequest) {
       const userIds = users.map((u) => u.id);
 
       if (userIds.length > 0) {
-        // Get articles by these users
-        const userArticles = await prisma.article.findMany({
-          where: { author_id: { in: userIds } },
-          select: { id: true },
-        });
+        if (deleteUserArticles) {
+          // Get articles by these users
+          const userArticles = await prisma.article.findMany({
+            where: { author_id: { in: userIds } },
+            select: { id: true },
+          });
 
-        const userArticleIds = userArticles.map((a) => a.id);
+          const userArticleIds = userArticles.map((a) => a.id);
 
-        await prisma.review.deleteMany({
-          where: {
-            OR: [
-              { reviewerId: { in: userIds } },
-              { article_id: { in: userArticleIds } },
-            ],
-          },
-        });
+          await prisma.review.deleteMany({
+            where: {
+              OR: [
+                { reviewerId: { in: userIds } },
+                { article_id: { in: userArticleIds } },
+              ],
+            },
+          });
 
-        await prisma.keyword.deleteMany({
-          where: { article_id: { in: userArticleIds } },
-        });
-        await prisma.article.deleteMany({
-          where: { id: { in: userArticleIds } },
-        });
+          await prisma.keyword.deleteMany({
+            where: { article_id: { in: userArticleIds } },
+          });
+          await prisma.article.deleteMany({
+            where: { id: { in: userArticleIds } },
+          });
+        }
         await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       }
     }
