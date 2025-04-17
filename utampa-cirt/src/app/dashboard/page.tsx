@@ -35,6 +35,7 @@ import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
+import {useRouter} from "next/router";
 import {router} from "next/client";
 
 // -----------------------------------------------------------------------------
@@ -342,18 +343,6 @@ export default function DashboardPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
-
-  const checkUserRole = async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) {
-      router.push("/register");
-      return;
-    }
-  }
-  useEffect(() => {
-    checkUserRole();
-  }, [router]);
 
   const fetchDashboardCounts = async () => {
     try {
