@@ -440,8 +440,8 @@ export default function DashboardPage() {
         fetchTotalApprovedCount();
         fetchDashboardCounts();
       } else {
-        setError("User not authenticated");
-        setLoading(false);
+        // setError("User not authenticated");
+        // setLoading(false);
         router.push('/register');
       }
     });
