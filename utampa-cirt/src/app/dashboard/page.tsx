@@ -35,6 +35,7 @@ import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
+import {useRouter} from "next/navigation";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
@@ -341,6 +342,7 @@ export default function DashboardPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
+  const router = useRouter();
 
   const fetchDashboardCounts = async () => {
     try {
@@ -440,11 +442,12 @@ export default function DashboardPage() {
       } else {
         setError("User not authenticated");
         setLoading(false);
+        router.push('/register');
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   // Show loading state while checking auth
   if (!authChecked) {
