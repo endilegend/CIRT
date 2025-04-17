@@ -35,8 +35,6 @@ import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
-import {useRouter} from "next/router";
-import {router} from "next/client";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
