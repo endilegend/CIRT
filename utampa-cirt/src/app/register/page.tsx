@@ -45,6 +45,11 @@ export default function RegisterPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [password, setPassword] = useState("");
+  const has8Chars = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage("");
@@ -174,12 +179,33 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
+                        id="password"
+                        name="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
                     />
-                  </div>
+                    </div>
+                    <div class="w-full max-w-sm mx-auto p-1">
+                      <ul className="mt-1 text-sm text-black">
+                        <li className="flex items-center">
+                          <span className={has8Chars ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                            {has8Chars ? "✓" : "✗"}
+                          </span>At least 8 characters
+                        </li>
+                        <li className="flex items-center">
+                          <span className={hasUpper ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                            {hasUpper ? "✓" : "✗"}
+                          </span>One uppercase letter
+                        </li>
+                        <li className="flex items-center">
+                          <span className={hasNumber ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                            {hasNumber ? "✓" : "✗"}
+                          </span>One number
+                        </li>
+                      </ul>
+                    </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>
@@ -189,26 +215,6 @@ export default function RegisterPage() {
                       type="password"
                       required
                     />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      name="terms"
-                      className="rounded border-gray-300 text-utred focus:ring-utred"
-                      required
-                    />
-                    <Label htmlFor="terms" className="text-sm">
-                      I agree to the{" "}
-                      <Link
-                        href="/terms"
-                        className="text-utred hover:underline"
-                        target="_blank"
-                      >
-                        Terms of Service
-                      </Link>
-                    </Label>
                   </div>
 
                   {errorMessage && (
@@ -221,9 +227,9 @@ export default function RegisterPage() {
                   )}
 
                   <Button
-                    type="submit"
-                    className="w-full bg-utred hover:bg-utred-dark"
-                    disabled={loading}
+                      type="submit"
+                      className="w-full bg-utred hover:bg-utred-dark"
+                      disabled={loading || !has8Chars || !hasUpper || !hasNumber}
                   >
                     {loading ? "Creating Account..." : "Create Account"}
                   </Button>
