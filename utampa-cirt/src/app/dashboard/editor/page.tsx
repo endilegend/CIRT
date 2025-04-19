@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -316,6 +317,44 @@ export default function EditorPage() {
   useEffect(() => {
     fetchUsers(1);
   }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        setError("No user ID found. Please log in.");
+        router.push("/register"); // Or redirect accordingly
+        return;
+      }
+
+      const userId = user.uid;
+
+      const response = await fetch(`/api/user/role?userId=${userId}`);
+      const data = await response.json();
+
+      console.log("User role:", data.role);
+
+      if (response.ok) {
+        if (data.role !== "Editor") {
+          router.push("/dashboard");
+        }
+      } else {
+        setError(data.error || "Something went wrong.");
+      }
+    } catch (err) {
+      setError("Failed to verify role.");
+      router.push("/dashboard")
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUserRole();
+  }, [router]);
 
   return (
     <MainLayout isAuthenticated={true}>

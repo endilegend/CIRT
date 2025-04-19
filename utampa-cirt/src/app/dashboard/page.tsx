@@ -35,6 +35,7 @@ import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
+import {useRouter} from "next/navigation";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
@@ -341,6 +342,7 @@ export default function DashboardPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
+  const router = useRouter();
 
   const fetchDashboardCounts = async () => {
     try {
@@ -438,13 +440,14 @@ export default function DashboardPage() {
         fetchTotalApprovedCount();
         fetchDashboardCounts();
       } else {
-        setError("User not authenticated");
-        setLoading(false);
+        // setError("User not authenticated");
+        // setLoading(false);
+        router.push('/register');
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   // Show loading state while checking auth
   if (!authChecked) {
@@ -531,8 +534,8 @@ export default function DashboardPage() {
               </Card>
             )}
 
-            {/* Edit Submissions Card - Visible to Editor and Reviewer */}
-            {(userRole === "Editor" || userRole === "Reviewer") && (
+            {/* Edit Submissions Card - Visible to Editor */}
+            {(userRole === "Editor") && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-lg font-medium">
