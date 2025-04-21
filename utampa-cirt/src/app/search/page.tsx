@@ -51,16 +51,25 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      if (query.trim()) {
-        router.push(`/search/results?search=${encodeURIComponent(query)}`);
-      }
-    },
-    [query, router]
+      (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const params = new URLSearchParams();
+        if (query.trim()) params.append("search", query.trim());
+        if (selectedType) params.append("type", selectedType);
+        if (selectedYear) params.append("year", selectedYear);
+
+        router.push(`/search/results?${params.toString()}`);
+      },
+      [query, selectedType, selectedYear, router]
   );
+
 
   const handleDownload = useCallback(async (article: ArticleWithRelations) => {
     try {
@@ -135,6 +144,7 @@ export default function SearchPage() {
   // Memoize the articles list to prevent unnecessary re-renders
   const memoizedArticles = useMemo(() => articles, [articles]);
 
+
   return (
     <MainLayout>
       <div className="bg-slate-50 min-h-screen py-8">
@@ -149,45 +159,84 @@ export default function SearchPage() {
 
             <div className="bg-white p-4 rounded-lg shadow-md">
               <form onSubmit={handleSubmit}>
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-grow">
-                    <Input
-                      placeholder="Search by title, author, keywords..."
-                      className="w-full"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                    />
+                <div className="flex flex-col gap-4 mb-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-grow">
+                      <Input
+                          placeholder="Search by title, author, keywords..."
+                          className="w-full"
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                      />
+                    </div>
+                    <Button type="submit" className="bg-utred hover:bg-utred-dark">
+                      Search
+                    </Button>
                   </div>
-                  <Button
-                    type="submit"
-                    className="bg-utred hover:bg-utred-dark"
-                  >
-                    Search
-                  </Button>
+
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                    >
+                      {showAdvanced ? "Hide Advanced" : "Advanced Search"}
+                    </Button>
+                  </div>
+
+                  {showAdvanced && (
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="advanced" className="text-left">
+                          Use AND, OR, or grouping with ( )
+                        </Label>
+                        <div className="flex flex-col md:flex-row gap-2">
+                          {/* Search Input */}
+                          <Input
+                              id="advanced"
+                              placeholder='e.g. "Corrections" AND (rehabilitation OR diversion)'
+                              value={query}
+                              onChange={(e) => setQuery(e.target.value)}
+                              className="flex-grow"
+                          />
+
+                          {/* Type Dropdown */}
+                          <div className="min-w-[150px]">
+                            <select
+                                className="w-full h-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                value={selectedType}
+                                onChange={(e) => setSelectedType(e.target.value)}
+                            >
+                              <option value="">All Types</option>
+                              <option value="Article">Articles</option>
+                              <option value="Journal">Journals</option>
+                              <option value="Poster">Posters</option>
+                              <option value="Paper">Papers</option>
+                            </select>
+                          </div>
+
+                          {/* Year Dropdown */}
+                          <div className="min-w-[150px]">
+                            <select
+                                className="w-full h-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                            >
+                              <option value="">All Years</option>
+                              <option value="2025">2025</option>
+                              <option value="2024">2024</option>
+                              <option value="2023">2023</option>
+                              <option value="2022">2022</option>
+                              <option value="older">2021 and older</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                  )}
+
                 </div>
               </form>
-
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button variant="outline" size="sm">
-                  Advanced Search
-                </Button>
-                <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-                  <option value="">All Types</option>
-                  <option value="Article">Articles</option>
-                  <option value="Journal">Journals</option>
-                  <option value="Poster">Posters</option>
-                  <option value="Paper">Papers</option>
-                </select>
-                <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-                  <option value="">All Years</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
-                  <option value="older">2021 and older</option>
-                </select>
               </div>
-            </div>
           </div>
 
           {/* Popular Keywords */}
@@ -323,6 +372,7 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
+
     </MainLayout>
   );
 }
