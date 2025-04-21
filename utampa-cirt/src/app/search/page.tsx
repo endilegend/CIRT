@@ -174,7 +174,7 @@ export default function SearchPage() {
                     </Button>
                   </div>
 
-                  <div className="flex flex-col md:flex-row gap-2">
+                  <div className="flex justify-center mb-2">
                     <Button
                         type="button"
                         variant="outline"
