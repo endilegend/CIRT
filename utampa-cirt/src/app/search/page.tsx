@@ -159,7 +159,7 @@ export default function SearchPage() {
 
             <div className="bg-white p-4 rounded-lg shadow-md">
               <form onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-4 mb-4">
+                <div className="flex flex-col gap-4 mb-1">
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-grow">
                       <Input
@@ -174,7 +174,7 @@ export default function SearchPage() {
                     </Button>
                   </div>
 
-                  <div className="flex justify-center mb-2">
+                  <div className="flex justify-center">
                     <Button
                         type="button"
                         variant="outline"
