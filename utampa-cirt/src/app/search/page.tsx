@@ -144,6 +144,20 @@ export default function SearchPage() {
   // Memoize the articles list to prevent unnecessary re-renders
   const memoizedArticles = useMemo(() => articles, [articles]);
 
+  const handleRandomArticle = useCallback(async () => {
+    try {
+      const response = await fetch("/api/articles/random");
+      if (!response.ok) throw new Error("No random article found");
+
+      const { article } = await response.json();
+      if (article?.id) {
+        router.push(`/article/${article.id}`);
+      }
+    } catch (error) {
+      console.error("Error fetching random article:", error);
+      alert("Failed to load a random article. Try again later.");
+    }
+  }, [router]);
 
   return (
     <MainLayout>
@@ -174,7 +188,7 @@ export default function SearchPage() {
                     </Button>
                   </div>
 
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-3">
                     <Button
                         type="button"
                         variant="outline"
@@ -183,6 +197,16 @@ export default function SearchPage() {
                     >
                       {showAdvanced ? "Hide Advanced" : "Advanced Search"}
                     </Button>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRandomArticle}
+                    >
+                      Random Article
+                    </Button>
+
                   </div>
 
                   {showAdvanced && (

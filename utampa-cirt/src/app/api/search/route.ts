@@ -52,6 +52,8 @@ export async function GET(request: Request) {
       searchCondition = buildFieldOR(rawQuery.trim());
     }
 
+
+
     // Year filter
     let yearCondition = {};
     if (year) {
