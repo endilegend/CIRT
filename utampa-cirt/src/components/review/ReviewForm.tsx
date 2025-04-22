@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, User, Status } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 type ArticleWithAuthor = Article & {
   author: User;
@@ -30,6 +31,7 @@ export function ReviewForm({ articleId }: ReviewFormProps) {
   const [comments, setComments] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
@@ -134,8 +136,8 @@ export function ReviewForm({ articleId }: ReviewFormProps) {
         throw new Error("Failed to submit review");
       }
 
-      // Redirect back to review dashboard
-      window.location.href = "/dashboard/review";
+      // Use Next.js router for navigation
+      router.push("/dashboard/review");
     } catch (error) {
       console.error("Error:", error);
       setError("Failed to submit review");
