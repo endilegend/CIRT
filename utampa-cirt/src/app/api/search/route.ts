@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@prisma/client";
+import { parseQueryToPrismaFilter } from "@/lib/searchParser";
+
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
@@ -33,25 +35,9 @@ export async function GET(request: Request) {
       ],
     });
 
-    // Basic parser for AND / OR (can be expanded later with nested logic)
-    let searchCondition = {};
-    const hasOr = /\s+OR\s+/i.test(rawQuery);
-    const hasAnd = /\s+AND\s+/i.test(rawQuery);
-
-    if (hasOr) {
-      const terms = rawQuery.split(/\s+OR\s+/i);
-      searchCondition = {
-        OR: terms.map((term) => buildFieldOR(term.trim())),
-      };
-    } else if (hasAnd) {
-      const terms = rawQuery.split(/\s+AND\s+/i);
-      searchCondition = {
-        AND: terms.map((term) => buildFieldOR(term.trim())),
-      };
-    } else if (rawQuery.trim()) {
-      searchCondition = buildFieldOR(rawQuery.trim());
-    }
-
+    const searchCondition = rawQuery.trim()
+        ? parseQueryToPrismaFilter(rawQuery.trim())
+        : {};
 
 
     // Year filter
