@@ -563,6 +563,35 @@ export default function DashboardPage() {
               </Card>
             )}
 
+            {/* Edit Submissions Card - Visible to Editor */}
+            {(userRole === "Editor") && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg font-medium">
+                      Edit Submissions
+                    </CardTitle>
+                    <AreaChart className="h-5 w-5 text-utred" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold"></div>
+                    <p className="text-sm text-gray-600">
+                      Delete
+                    </p>
+                    <br></br>
+                  </CardContent>
+                  <CardFooter>
+                    <Link href="/delete">
+                      <Button
+                          variant="ghost"
+                          className="text-utred hover:text-utred-dark"
+                      >
+                        View Submissions
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+            )}
+
             {/* Database Status Card - Visible to all roles */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
