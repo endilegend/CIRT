@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {getAuth} from "firebase/auth";
+import {router} from "next/client";
 
 interface DeleteResponse {
   success?: boolean;
@@ -30,6 +32,7 @@ interface DeleteResponse {
 
 export default function DeletePage() {
   const [emails, setEmails] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [articleIds, setArticleIds] = useState("");
   const [deleteUserArticles, setDeleteUserArticles] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,6 +70,44 @@ export default function DeletePage() {
     setLoading(false);
     setShowConfirmDialog(false);
   };
+
+  const checkUserRole = async () => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        setError("No user ID found. Please log in.");
+        router.push("/register"); // Or redirect accordingly
+        return;
+      }
+
+      const userId = user.uid;
+
+      const response = await fetch(`/api/user/role?userId=${userId}`);
+      const data = await response.json();
+
+      console.log("User role:", data.role);
+
+      if (response.ok) {
+        if (data.role !== "Editor") {
+          router.push("/dashboard");
+        }
+      } else {
+        setError(data.error || "Something went wrong.");
+      }
+    } catch (err) {
+      setError("Failed to verify role.");
+      router.push("/dashboard")
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUserRole();
+  }, [router]);
 
   return (
     <MainLayout isAuthenticated={true}>
