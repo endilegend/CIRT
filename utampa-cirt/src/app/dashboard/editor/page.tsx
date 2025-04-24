@@ -5,6 +5,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
+import DeleteCard from "@/components/delete/DeleteCard";
 import {
   Card,
   CardContent,
@@ -736,6 +737,7 @@ export default function EditorPage() {
                   </div>
                 </div>
               )}
+              <DeleteCard></DeleteCard>
             </CardContent>
           </Card>
         </div>

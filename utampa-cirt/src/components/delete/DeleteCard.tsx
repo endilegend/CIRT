@@ -30,7 +30,7 @@ interface DeleteResponse {
   error?: string;
 }
 
-export default function DeletePage() {
+export default function DeleteCard() {
   const [emails, setEmails] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [articleIds, setArticleIds] = useState("");
@@ -71,46 +71,8 @@ export default function DeletePage() {
     setShowConfirmDialog(false);
   };
 
-  const checkUserRole = async () => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) {
-        setError("No user ID found. Please log in.");
-        router.push("/register"); // Or redirect accordingly
-        return;
-      }
-
-      const userId = user.uid;
-
-      const response = await fetch(`/api/user/role?userId=${userId}`);
-      const data = await response.json();
-
-      console.log("User role:", data.role);
-
-      if (response.ok) {
-        if (data.role !== "Editor") {
-          router.push("/dashboard");
-        }
-      } else {
-        setError(data.error || "Something went wrong.");
-      }
-    } catch (err) {
-      setError("Failed to verify role.");
-      router.push("/dashboard")
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    checkUserRole();
-  }, [router]);
-
   return (
-    <MainLayout isAuthenticated={true}>
+    // <MainLayout isAuthenticated={true}>
       <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
           <div className="mb-8">
@@ -216,6 +178,6 @@ export default function DeletePage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </MainLayout>
+    // </MainLayout>
   );
 }
