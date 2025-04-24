@@ -73,6 +73,7 @@ export default function DeleteCard() {
 
   return (
     // <MainLayout isAuthenticated={true}>
+      <div className="ut-container">
       <div className="bg-slate-50 py-8 min-h-screen">
         <div className="ut-container">
           <div className="mb-8">
@@ -177,6 +178,7 @@ export default function DeleteCard() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
       </div>
     // </MainLayout>
   );
