@@ -80,15 +80,6 @@ export default function DeleteCard() {
             Enter emails or article IDs to delete content. Deleting a user
             will also delete all their articles.
           </CardDescription>
-      // <div className="ut-container">
-      // <div className="bg-slate-50 py-8 min-h-screen">
-      //   <div className="ut-container">
-      //     <div className="mb-8">
-      //       <h1 className="text-3xl font-bold">Delete Articles or Users</h1>
-      //       <p className="text-gray-600">
-      //
-      //       </p>
-      //     </div>
 
           <Card>
             <CardHeader>
@@ -155,7 +146,6 @@ export default function DeleteCard() {
               )}
             </CardContent>
           </Card>
-        </div>
 
         <AlertDialog
           open={showConfirmDialog}
@@ -184,8 +174,6 @@ export default function DeleteCard() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-      </div>
         </CardHeader>
       </Card>
     // </MainLayout>
