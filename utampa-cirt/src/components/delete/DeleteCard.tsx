@@ -73,16 +73,22 @@ export default function DeleteCard() {
 
   return (
     // <MainLayout isAuthenticated={true}>
-      <div className="ut-container">
-      <div className="bg-slate-50 py-8 min-h-screen">
-        <div className="ut-container">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Delete Articles or Users</h1>
-            <p className="text-gray-600">
-              Enter emails or article IDs to delete content. Deleting a user
-              will also delete all their articles.
-            </p>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Delete Articles or Users</CardTitle>
+          <CardDescription>
+            Enter emails or article IDs to delete content. Deleting a user
+            will also delete all their articles.
+          </CardDescription>
+      // <div className="ut-container">
+      // <div className="bg-slate-50 py-8 min-h-screen">
+      //   <div className="ut-container">
+      //     <div className="mb-8">
+      //       <h1 className="text-3xl font-bold">Delete Articles or Users</h1>
+      //       <p className="text-gray-600">
+      //
+      //       </p>
+      //     </div>
 
           <Card>
             <CardHeader>
@@ -180,6 +186,8 @@ export default function DeleteCard() {
         </AlertDialog>
       </div>
       </div>
+        </CardHeader>
+      </Card>
     // </MainLayout>
   );
 }
