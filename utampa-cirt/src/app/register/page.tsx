@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { initializeApp, FirebaseError } from "firebase/app";
+import { Eye, EyeOff } from "lucide-react";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -44,6 +45,9 @@ export default function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [password, setPassword] = useState("");
   const has8Chars = password.length >= 8;
@@ -61,7 +65,6 @@ export default function RegisterPage() {
     const lName = formData.get("last-name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirm-password") as string;
 
     if (!fName || !lName || !email || !password || !confirmPassword) {
       setErrorMessage("Please fill in all fields!");
@@ -178,43 +181,71 @@ export default function RegisterPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                    <div className="relative">
+                      <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="pr-10"
+                      />
+                      <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
-                    <div class="w-full max-w-sm mx-auto p-1">
-                      <ul className="mt-1 text-sm text-black">
-                        <li className="flex items-center">
-                          <span className={has8Chars ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
-                            {has8Chars ? "✓" : "✗"}
-                          </span>At least 8 characters
-                        </li>
-                        <li className="flex items-center">
-                          <span className={hasUpper ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
-                            {hasUpper ? "✓" : "✗"}
-                          </span>One uppercase letter
-                        </li>
-                        <li className="flex items-center">
-                          <span className={hasNumber ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
-                            {hasNumber ? "✓" : "✗"}
-                          </span>One number
-                        </li>
-                      </ul>
-                    </div>
+                  </div>
+                  <div className="w-full max-w-sm mx-auto p-1">
+                    <ul className="mt-1 text-sm text-black">
+                      <li className="flex items-center">
+                        <span className={has8Chars ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                          {has8Chars ? "✓" : "✗"}
+                        </span>At least 8 characters
+                      </li>
+                      <li className="flex items-center">
+                        <span className={hasUpper ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                          {hasUpper ? "✓" : "✗"}
+                        </span>One uppercase letter
+                      </li>
+                      <li className="flex items-center">
+                        <span className={hasNumber ? "text-green-500 mr-2" : "text-red-500 mr-2"}>
+                          {hasNumber ? "✓" : "✗"}
+                        </span>One number
+                      </li>
+                    </ul>
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      name="confirm-password"
-                      type="password"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                          id="confirm-password"
+                          name="confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          className="pr-10"
+                      />
+                      <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          tabIndex={-1}
+                      >
+                        {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                        ) : (
+                            <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {errorMessage && (
