@@ -737,9 +737,9 @@ export default function EditorPage() {
                   </div>
                 </div>
               )}
-              <DeleteCard></DeleteCard>
             </CardContent>
           </Card>
+          <DeleteCard></DeleteCard>
         </div>
       </div>
     </MainLayout>
