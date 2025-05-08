@@ -35,8 +35,8 @@ export function Header() {
 
   return (
     <header className="bg-utred text-white">
-      <div className="ut-container flex items-center justify-between h-16">
-        <div className="flex items-center space-x-4">
+      <div className="ut-container flex items-center justify-between h-16 md:h-16 px-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <Link href="https://www.ut.edu" className="flex items-center">
             <div className="relative h-8 w-8">
               <Image
@@ -47,7 +47,10 @@ export function Header() {
               />
             </div>
           </Link>
-          <Link href="/" className="font-bold text-xl hover:text-gray-200">
+          <Link
+            href="/"
+            className="font-bold text-lg md:text-xl hover:text-gray-200"
+          >
             CIRT
           </Link>
           <span className="hidden md:inline-block text-sm">
@@ -55,19 +58,22 @@ export function Header() {
           </span>
         </div>
 
-        <nav className="flex items-center space-x-4">
-          <Link href="/" className="hover:text-gray-200 text-sm md:text-base">
+        <nav className="flex items-center space-x-2 md:space-x-4">
+          <Link
+            href="/"
+            className="hover:text-gray-200 text-sm md:text-base px-2 py-1"
+          >
             Home
           </Link>
           <Link
             href="/search"
-            className="hover:text-gray-200 text-sm md:text-base"
+            className="hover:text-gray-200 text-sm md:text-base px-2 py-1"
           >
             Search
           </Link>
           <Link
             href="/about"
-            className="hover:text-gray-200 text-sm md:text-base"
+            className="hover:text-gray-200 text-sm md:text-base px-2 py-1"
           >
             About
           </Link>
@@ -77,13 +83,13 @@ export function Header() {
               <Link href="/dashboard">
                 <Button
                   variant="outline"
-                  className="text-black hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark text-sm md:text-base"
                 >
                   Dashboard
                 </Button>
               </Link>
               <button onClick={() => signOut(auth)}>
-                <span className="text-white hover:text-gray-200 hover:bg-utred-dark">
+                <span className="text-white hover:text-gray-200 hover:bg-utred-dark text-sm md:text-base">
                   Sign Out
                 </span>
               </button>
@@ -93,7 +99,7 @@ export function Header() {
               <Link href="/signin">
                 <Button
                   variant="outline"
-                  className="text-black hover:bg-utred-dark"
+                  className="text-black hover:bg-utred-dark text-sm md:text-base"
                 >
                   Sign In
                 </Button>
@@ -101,7 +107,7 @@ export function Header() {
               <Link href="/register">
                 <Button
                   variant="ghost"
-                  className="text-white hover:text-gray-200 hover:bg-utred-dark"
+                  className="text-white hover:text-gray-200 hover:bg-utred-dark text-sm md:text-base"
                 >
                   Register
                 </Button>
