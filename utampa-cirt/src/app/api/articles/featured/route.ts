@@ -16,7 +16,7 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
-      take: 5, // Limit to 5 featured articles
+      take: 6, // Limit to 6 featured articles
     });
 
     return NextResponse.json({ articles: featuredArticles });
