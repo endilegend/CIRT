@@ -82,37 +82,107 @@ export default function EditorPage() {
   const [selectedReviewers, setSelectedReviewers] = useState<{
     [key: string]: string;
   }>({});
+  const [authChecked, setAuthChecked] = useState(false);
+
+  const fetchUsers = async (page: number, query: string = "") => {
+    setLoadingUsers(true);
+    try {
+      const response = await fetch(
+        `/api/users/list?page=${page.toString()}&query=${encodeURIComponent(
+          query
+        )}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const data = await response.json();
+      setUsers(data.users as UserWithRole[]);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const fetchArticles = async () => {
+    try {
+      const [sentRes, approvedRes] = await Promise.all([
+        fetch("/api/articles/sent"),
+        fetch("/api/articles/approved"),
+      ]);
+
+      if (!sentRes.ok || !approvedRes.ok) {
+        throw new Error("Failed to fetch articles");
+      }
+
+      const [sentData, approvedData] = await Promise.all([
+        sentRes.json(),
+        approvedRes.json(),
+      ]);
+
+      setArticles(sentData.articles);
+      setApprovedArticles(approvedData.articles);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching articles:", error);
+      setError("Failed to load articles");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const [sentRes, approvedRes] = await Promise.all([
-          fetch("/api/articles/sent"),
-          fetch("/api/articles/approved"),
-        ]);
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setAuthChecked(true);
 
-        if (!sentRes.ok || !approvedRes.ok) {
-          throw new Error("Failed to fetch articles");
+      if (user) {
+        try {
+          const response = await fetch(`/api/user/role?userId=${user.uid}`);
+          const data = await response.json();
+
+          if (response.ok) {
+            if (data.role !== "Editor") {
+              router.push("/dashboard");
+              return;
+            }
+            // If user is an editor, fetch the articles
+            fetchArticles();
+          } else {
+            setError(data.error || "Something went wrong.");
+          }
+        } catch (err) {
+          setError("Failed to verify role.");
+          console.error(err);
         }
-
-        const [sentData, approvedData] = await Promise.all([
-          sentRes.json(),
-          approvedRes.json(),
-        ]);
-
-        setArticles(sentData.articles);
-        setApprovedArticles(approvedData.articles);
-        setError(null);
-      } catch (error) {
-        console.error("Error fetching articles:", error);
-        setError("Failed to load articles");
-      } finally {
-        setLoading(false);
+      } else {
+        router.push("/register");
       }
-    };
+    });
 
-    fetchArticles();
+    return () => unsubscribe();
+  }, [router]);
+
+  useEffect(() => {
+    fetchUsers(1);
   }, []);
+
+  // Show loading state while checking auth
+  if (!authChecked) {
+    return (
+      <MainLayout isAuthenticated={true}>
+        <div className="bg-slate-50 min-h-screen py-8">
+          <div className="ut-container">
+            <div className="flex justify-center items-center h-32">
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const handleInputChange = async (id: number, value: string) => {
     setEditorQueries((prev) => ({ ...prev, [id.toString()]: value }));
@@ -178,28 +248,6 @@ export default function EditorPage() {
     } catch (error) {
       console.error("Error assigning editor:", error);
       alert("Failed to assign editor. Please try again.");
-    }
-  };
-
-  const fetchUsers = async (page: number, query: string = "") => {
-    setLoadingUsers(true);
-    try {
-      const response = await fetch(
-        `/api/users/list?page=${page.toString()}&query=${encodeURIComponent(
-          query
-        )}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-      const data = await response.json();
-      setUsers(data.users as UserWithRole[]);
-      setTotalPages(data.totalPages);
-      setCurrentPage(data.currentPage);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setLoadingUsers(false);
     }
   };
 
@@ -314,48 +362,6 @@ export default function EditorPage() {
   const handleFeaturedSearch = (query: string) => {
     setFeaturedSearchQuery(query);
   };
-
-  useEffect(() => {
-    fetchUsers(1);
-  }, []);
-
-  const checkUserRole = async () => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) {
-        setError("No user ID found. Please log in.");
-        router.push("/register"); // Or redirect accordingly
-        return;
-      }
-
-      const userId = user.uid;
-
-      const response = await fetch(`/api/user/role?userId=${userId}`);
-      const data = await response.json();
-
-      console.log("User role:", data.role);
-
-      if (response.ok) {
-        if (data.role !== "Editor") {
-          router.push("/dashboard");
-        }
-      } else {
-        setError(data.error || "Something went wrong.");
-      }
-    } catch (err) {
-      setError("Failed to verify role.");
-      router.push("/dashboard")
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    checkUserRole();
-  }, [router]);
 
   return (
     <MainLayout isAuthenticated={true}>
