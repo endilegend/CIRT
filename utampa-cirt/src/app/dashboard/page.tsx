@@ -35,7 +35,7 @@ import { AreaChart, BookOpen, FileUp, PlusCircle, Search } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Article, Keyword, Role } from "@prisma/client";
 import { supabase } from "@/lib/supabase";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // -----------------------------------------------------------------------------
 // SAMPLE DATA & HELPERS
@@ -348,13 +348,19 @@ export default function DashboardPage() {
     try {
       const response = await fetch("/api/dashboard/counts");
       if (!response.ok) {
-        throw new Error("Failed to fetch dashboard counts");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch dashboard counts");
       }
       const data = await response.json();
       setEditCount(data.editCount);
       setReviewCount(data.reviewCount);
     } catch (error) {
       console.error("Error fetching dashboard counts:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch dashboard counts"
+      );
     }
   };
 
@@ -442,7 +448,7 @@ export default function DashboardPage() {
       } else {
         // setError("User not authenticated");
         // setLoading(false);
-        router.push('/register');
+        router.push("/register");
       }
     });
 
@@ -535,7 +541,7 @@ export default function DashboardPage() {
             )}
 
             {/* Edit Submissions Card - Visible to Editor */}
-            {(userRole === "Editor") && (
+            {userRole === "Editor" && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-lg font-medium">
