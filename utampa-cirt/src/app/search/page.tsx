@@ -54,22 +54,36 @@ export default function SearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedType, setSelectedType] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [searchOperator, setSearchOperator] = useState<"AND" | "OR">("AND");
 
+  const currentYear = 2025; // Hardcode current year to 2025
+  const yearOptions = [
+    { value: currentYear.toString(), label: currentYear.toString() },
+    {
+      value: (currentYear - 1).toString(),
+      label: (currentYear - 1).toString(),
+    },
+    {
+      value: (currentYear - 2).toString(),
+      label: (currentYear - 2).toString(),
+    },
+    { value: "older", label: "Before " + (currentYear - 2) },
+  ];
 
   const handleSubmit = useCallback(
-      (e: React.FormEvent) => {
-        e.preventDefault();
+    (e: React.FormEvent) => {
+      e.preventDefault();
 
-        const params = new URLSearchParams();
-        if (query.trim()) params.append("search", query.trim());
-        if (selectedType) params.append("type", selectedType);
-        if (selectedYear) params.append("year", selectedYear);
+      const params = new URLSearchParams();
+      if (query.trim()) params.append("search", query.trim());
+      if (selectedType) params.append("type", selectedType);
+      if (selectedYear) params.append("year", selectedYear);
+      params.append("operator", searchOperator);
 
-        router.push(`/search/results?${params.toString()}`);
-      },
-      [query, selectedType, selectedYear, router]
+      router.push(`/search/results?${params.toString()}`);
+    },
+    [query, selectedType, selectedYear, searchOperator, router]
   );
-
 
   const handleDownload = useCallback(async (article: ArticleWithRelations) => {
     try {
@@ -177,90 +191,114 @@ export default function SearchPage() {
                   <div className="flex flex-col md:flex-row gap-4">
                     <div className="flex-grow">
                       <Input
-                          placeholder="Search by title, author, keywords..."
-                          className="w-full"
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search by title, author, keywords..."
+                        className="w-full"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
                       />
                     </div>
-                    <Button type="submit" className="bg-utred hover:bg-utred-dark">
+                    <Button
+                      type="submit"
+                      className="bg-utred hover:bg-utred-dark"
+                    >
                       Search
                     </Button>
                   </div>
 
                   <div className="flex justify-center gap-3">
                     <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAdvanced(!showAdvanced)}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
                     >
                       {showAdvanced ? "Hide Advanced" : "Advanced Search"}
                     </Button>
 
                     <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRandomArticle}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRandomArticle}
                     >
                       Random Article
                     </Button>
-
                   </div>
 
                   {showAdvanced && (
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="advanced" className="text-left">
-                          Use AND, OR, or grouping with ( )
-                        </Label>
-                        <div className="flex flex-col md:flex-row gap-2">
-                          {/* Search Input */}
-                          <Input
-                              id="advanced"
-                              placeholder='e.g. "Corrections" AND (rehabilitation OR diversion)'
-                              value={query}
-                              onChange={(e) => setQuery(e.target.value)}
-                              className="flex-grow"
-                          />
-
-                          {/* Type Dropdown */}
-                          <div className="min-w-[150px]">
-                            <select
-                                className="w-full h-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                value={selectedType}
-                                onChange={(e) => setSelectedType(e.target.value)}
-                            >
-                              <option value="">All Types</option>
-                              <option value="Article">Articles</option>
-                              <option value="Journal">Journals</option>
-                              <option value="Poster">Posters</option>
-                              <option value="Paper">Papers</option>
-                            </select>
-                          </div>
-
-                          {/* Year Dropdown */}
-                          <div className="min-w-[150px]">
-                            <select
-                                className="w-full h-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                            >
-                              <option value="">All Years</option>
-                              <option value="2025">2025</option>
-                              <option value="2024">2024</option>
-                              <option value="2023">2023</option>
-                              <option value="2022">2022</option>
-                              <option value="older">2021 and older</option>
-                            </select>
-                          </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label htmlFor="type">Article Type</Label>
+                        <select
+                          id="type"
+                          value={selectedType}
+                          onChange={(e) => setSelectedType(e.target.value)}
+                          className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
+                        >
+                          <option value="">All Types</option>
+                          <option value="Article">Article</option>
+                          <option value="Journal">Journal</option>
+                          <option value="Poster">Poster</option>
+                          <option value="Paper">Paper</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label htmlFor="year">Publication Year</Label>
+                        <select
+                          id="year"
+                          name="year"
+                          value={selectedYear}
+                          onChange={(e) => setSelectedYear(e.target.value)}
+                          className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2"
+                        >
+                          <option value="">All Years</option>
+                          {yearOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Search Operator</Label>
+                        <div className="flex gap-4 mt-1">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="operator"
+                              value="AND"
+                              checked={searchOperator === "AND"}
+                              onChange={(e) =>
+                                setSearchOperator(
+                                  e.target.value as "AND" | "OR"
+                                )
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span>AND (all terms must match)</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="operator"
+                              value="OR"
+                              checked={searchOperator === "OR"}
+                              onChange={(e) =>
+                                setSearchOperator(
+                                  e.target.value as "AND" | "OR"
+                                )
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span>OR (any term can match)</span>
+                          </label>
                         </div>
                       </div>
+                    </div>
                   )}
-
                 </div>
               </form>
-              </div>
+            </div>
           </div>
 
           {/* Popular Keywords */}
@@ -396,7 +434,6 @@ export default function SearchPage() {
           </div>
         </div>
       </div>
-
     </MainLayout>
   );
 }
