@@ -196,6 +196,10 @@ export default function SearchPage() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                       />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Tip: Use -term to exclude results containing that term
+                        (e.g., "criminology -juvenile")
+                      </p>
                     </div>
                     <Button
                       type="submit"

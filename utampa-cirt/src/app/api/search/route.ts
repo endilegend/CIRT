@@ -22,26 +22,33 @@ export async function GET(request: Request) {
     });
 
     // Helper: build search condition for a single term
-    const buildSearchCondition = (term: string): Prisma.ArticleWhereInput => ({
-      OR: [
-        { paper_name: { contains: term, mode: "insensitive" } },
-        {
-          author: {
-            OR: [
-              { f_name: { contains: term, mode: "insensitive" } },
-              { l_name: { contains: term, mode: "insensitive" } },
-            ],
-          },
-        },
-        {
-          keywords: {
-            some: {
-              keyword: { contains: term, mode: "insensitive" },
+    const buildSearchCondition = (term: string): Prisma.ArticleWhereInput => {
+      const isExcluded = term.startsWith("-");
+      const searchTerm = isExcluded ? term.substring(1) : term;
+
+      const condition: Prisma.ArticleWhereInput = {
+        OR: [
+          { paper_name: { contains: searchTerm, mode: "insensitive" } },
+          {
+            author: {
+              OR: [
+                { f_name: { contains: searchTerm, mode: "insensitive" } },
+                { l_name: { contains: searchTerm, mode: "insensitive" } },
+              ],
             },
           },
-        },
-      ],
-    });
+          {
+            keywords: {
+              some: {
+                keyword: { contains: searchTerm, mode: "insensitive" },
+              },
+            },
+          },
+        ],
+      };
+
+      return isExcluded ? { NOT: condition } : condition;
+    };
 
     // Build search conditions based on operator
     let searchCondition: Prisma.ArticleWhereInput = {};
