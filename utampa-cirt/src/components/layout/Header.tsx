@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { initializeApp } from "firebase/app";
+import { Menu, X } from "lucide-react";
 
 // Firebase configuration (ensure these match your project settings)
 const firebaseConfig = {
@@ -25,6 +26,7 @@ const auth = getAuth(app);
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -33,9 +35,20 @@ export function Header() {
     return unsubscribe;
   }, []);
 
+  // Close menu on route change (optional, for better UX)
+  useEffect(() => {
+    if (menuOpen) {
+      const handleResize = () => {
+        if (window.innerWidth >= 768) setMenuOpen(false);
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, [menuOpen]);
+
   return (
     <header className="bg-utred text-white">
-      <div className="ut-container flex items-center justify-between h-16 md:h-16 px-4">
+      <div className="ut-container flex items-center justify-between h-16 md:h-16 px-4 relative">
         <div className="flex items-center space-x-2 md:space-x-4">
           <Link href="https://www.ut.edu" className="flex items-center">
             <div className="relative h-8 w-8">
@@ -58,7 +71,17 @@ export function Header() {
           </span>
         </div>
 
-        <nav className="flex items-center space-x-2 md:space-x-4">
+        {/* Hamburger menu button for mobile */}
+        <button
+          className="md:hidden ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-white"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center space-x-2 md:space-x-4">
           <Link
             href="/"
             className="hover:text-gray-200 text-sm md:text-base px-2 py-1"
@@ -115,6 +138,70 @@ export function Header() {
             </div>
           )}
         </nav>
+
+        {/* Mobile nav dropdown */}
+        {menuOpen && (
+          <nav className="absolute top-full left-0 w-full bg-utred shadow-lg z-50 flex flex-col items-start p-4 space-y-2 md:hidden animate-fade-in">
+            <Link
+              href="/"
+              className="w-full hover:text-gray-200 text-base px-2 py-2"
+              onClick={() => setMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/search"
+              className="w-full hover:text-gray-200 text-base px-2 py-2"
+              onClick={() => setMenuOpen(false)}
+            >
+              Search
+            </Link>
+            <Link
+              href="/about"
+              className="w-full hover:text-gray-200 text-base px-2 py-2"
+              onClick={() => setMenuOpen(false)}
+            >
+              About
+            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="w-full hover:text-gray-200 text-base px-2 py-2"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  className="w-full text-left hover:text-gray-200 text-base px-2 py-2"
+                  onClick={() => {
+                    signOut(auth);
+                    setMenuOpen(false);
+                  }}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="w-full hover:text-gray-200 text-base px-2 py-2"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="w-full hover:text-gray-200 text-base px-2 py-2"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </nav>
+        )}
       </div>
     </header>
   );
