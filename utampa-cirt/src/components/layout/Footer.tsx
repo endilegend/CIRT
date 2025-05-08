@@ -34,6 +34,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/fellowship"
+                  className="text-gray-300 hover:text-white"
+                >
+                  Fellowship
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="https://www.ut.edu/academics/college-of-social-sciences-mathematics-and-education/criminology-and-criminal-justice-degrees/criminology-institute-for-research-and-training-"
                   className="text-gray-300 hover:text-white"
                   target="_blank"
