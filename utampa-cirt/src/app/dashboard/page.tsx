@@ -346,7 +346,9 @@ export default function DashboardPage() {
 
   const fetchDashboardCounts = async () => {
     try {
-      const response = await fetch("/api/dashboard/counts");
+      const response: Response = await fetch("/api/dashboard/counts", {
+        credentials: "include",
+      });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch dashboard counts");
@@ -366,7 +368,9 @@ export default function DashboardPage() {
 
   const fetchTotalApprovedCount = async () => {
     try {
-      const response = await fetch("/api/publications/count");
+      const response: Response = await fetch("/api/publications/count", {
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch total count");
       }
@@ -379,7 +383,12 @@ export default function DashboardPage() {
 
   const fetchUserPublications = async (userId: string) => {
     try {
-      const response = await fetch(`/api/user/publications?userId=${userId}`);
+      const response: Response = await fetch(
+        `/api/user/publications?userId=${userId}`,
+        {
+          credentials: "include",
+        }
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch publications");
       }

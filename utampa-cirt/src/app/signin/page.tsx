@@ -79,6 +79,7 @@ export default function SignInPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ idToken }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -153,18 +154,22 @@ export default function SignInPage() {
                       <Label htmlFor="password">Password</Label>
                       <div className="relative">
                         <Input
-                            id="password"
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            required
-                            className="pr-10" // space for the icon
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          className="pr-10" // space for the icon
                         />
                         <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                         >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </div>
